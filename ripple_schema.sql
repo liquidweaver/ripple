@@ -19,7 +19,7 @@ CREATE TABLE logs (
 	flavor INTEGER NOT NULL,
 	body TEXT NOT NULL,
 	user_id INTEGER NOT NULL REFERENCES users,
-	created_data INTEGER NOT NULL
+	created_date INTEGER NOT NULL
 );
 
 CREATE TABLE watchers (

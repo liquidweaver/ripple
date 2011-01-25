@@ -1,10 +1,8 @@
 #ifndef RIPPLETASK_H
 #define RIPPLETASK_H
-#include <boost/shared_ptr.hpp>
 #include "RippleUser.hpp"
 #include "RippleDefines.hpp"
 
-using boost::shared_ptr;
 class RippleTask {
 public:
 	RippleTask( RippleUser& stakeholder )
