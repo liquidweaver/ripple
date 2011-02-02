@@ -9,7 +9,7 @@ CREATE TABLE tasks (
 	stakeholder INTEGER NOT NULL REFERENCES users,
 	assigned INTEGER REFERENCES users,
 	start_date INTEGER,
-	due_data INTEGER,
+	due_date INTEGER,
 	state INTEGER,
 	parent_task INTEGER REFERENCES tasks
 );
@@ -19,6 +19,7 @@ CREATE TABLE logs (
 	flavor INTEGER NOT NULL,
 	body TEXT NOT NULL,
 	user_id INTEGER NOT NULL REFERENCES users,
+	task_id INTEGER NOT NULL REFERENCES tasks,
 	created_date INTEGER NOT NULL
 );
 

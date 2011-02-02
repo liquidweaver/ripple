@@ -25,9 +25,8 @@ int main( int argc, char* argv[] ) {
 	cout << ru.user_id << ' '
 			<< ru.name << ' '
 			<< ru.email << endl;
-	RippleTask rt( ru );
 
-	ripple.InsertTask( rt );
+	RippleTask rt = ripple.CreateTask( ru, "This is a test task\nIsn't it grand." );
 
 	cout << rt.task_id << ' '
 		<< rt.state << ' ' 

@@ -2,10 +2,14 @@
 #define RIPPLELOG_H
 #include "RippleUser.hpp"
 #include "RippleDefines.hpp"
+#include <time.h>
 
 class RippleLog {
 public:
-	RippleLog( const RippleUser& creator )
+	RippleLog( const RippleUser& creator, const RippleTask& task, RIPPLE_LOG_FLAVOR flavor, const string& subject_and_body ) 
+	: user_id( creator.user_id ), task_id( task.task_id ), flavor( flavor ), body( subject_and_body ) {
+		created_date = time( NULL );
+	}
 
 	string Subject() const {
 		return body.substr( 0, body.find_first_of( "\r\n" ) );
@@ -15,22 +19,24 @@ public:
 	RIPPLE_LOG_FLAVOR flavor;
 	string body;
 	int user_id;
-	std:tm created_date;
-}
+	int task_id;
+	time_t created_date;
+};
 
 namespace soci
 {
 template<> struct type_conversion<RippleLog>
 {
 	typedef values base_type;
-    static void from_base(values const& v, indicator /* ind */, RippleLog& p) {
-	 	if ( indicator == i_null )
+    static void from_base(values const& v, indicator ind, RippleLog& p) {
+	 	if ( ind == i_null )
 			throw logic_error( "Cannot load log entry: database reports NULL" );
 	 	p.log_id = v.get<int>("log_id");
 		p.flavor = static_cast<RIPPLE_LOG_FLAVOR>( v.get<int>("flavor") );
 		p.body = v.get<string>("body");
-		p.created_date = v.get<std::tm>("created_date");
+		p.created_date = v.get<std::time_t>("created_date");
 		p.user_id = v.get<int>("user_id");
+		p.task_id = v.get<int>("task_id");
     }
 
     static void to_base(const RippleLog& p, values& v, indicator& ind) {
@@ -39,6 +45,7 @@ template<> struct type_conversion<RippleLog>
 		v.set("body", p.body );
 		v.set("created_date", p.created_date );
 		v.set("user_id", p.user_id );
+		v.set("task_id", p.task_id );
 
 		ind = i_ok;
     }
