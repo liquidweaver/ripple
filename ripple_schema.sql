@@ -1,7 +1,7 @@
 CREATE TABLE users (
 	user_id INTEGER PRIMARY KEY NOT NULL,
-	user_name TEXT NOT NULL,
-	user_email text NOT NULL
+	name TEXT NOT NULL,
+	email text NOT NULL
 );
 
 CREATE TABLE tasks (

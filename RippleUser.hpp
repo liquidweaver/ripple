@@ -9,6 +9,7 @@ class RippleUser {
 public:
 	RippleUser( string name, string email )
 	: user_id( -1 ), name( name ), email( email ) { }
+	RippleUser() : user_id( -1 ), name( "UNSET" ), email( "UNSET" ) { }
 	int user_id;
 	string name;
 	string email;
