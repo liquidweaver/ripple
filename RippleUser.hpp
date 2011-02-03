@@ -2,6 +2,7 @@
 #define RIPPLEUSER_H
 #include <soci/soci.h>
 #include <string>
+#include "RippleException.hpp"
 
 using namespace std;
 
@@ -20,10 +21,12 @@ namespace soci
 template<> struct type_conversion<RippleUser>
 {
     typedef values base_type;
-    static void from_base(values const& v, indicator /* ind */, RippleUser& p) {
-	 	p.user_id = v.get<int>("user_id");
-		p.name = v.get<std::string>("name");
-		p.email = v.get<std::string>("email");
+    static void from_base(values const& v, indicator ind, RippleUser& p) {
+		 if ( ind == i_null )
+			 throw RippleException( "User not found." );
+		 p.user_id = v.get<int>("user_id");
+		 p.name = v.get<std::string>("name");
+		 p.email = v.get<std::string>("email");
     }
 
     static void to_base(const RippleUser& p, values& v, indicator& ind) {

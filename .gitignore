@@ -1,3 +1,4 @@
 ripple.db
 tags
 rippled
+*.o

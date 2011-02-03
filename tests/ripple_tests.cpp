@@ -14,6 +14,11 @@ BOOST_AUTO_TEST_CASE( user_creation_and_deletion ) {
 	RippleUser ru2;
 	ripple.GetUser( ru.user_id, ru2 );
 	BOOST_CHECK_EQUAL( ru2.name, "Joshua Weaver" );
+
+	ripple.DeleteUser( ru2 );
+	BOOST_REQUIRE_THROW( ripple.DeleteUser( ru2 ), RippleException );
+
+	BOOST_REQUIRE_THROW( ripple.GetUser( ru2.user_id, ru2 ), RippleException );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

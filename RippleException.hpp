@@ -3,19 +3,10 @@
 #include <exception>
 #include <string>
 
-class RippleException : public exception {
+class RippleException : public std::runtime_error {
 	public:
-		RippleException( string what )
-			: m_what( what ) { }
-
-		virtual ~RippleException() throw() {}
-
-		virtual const char* what() const throw() {
-			return m_what.c_str();
-		}
-	
-	protected:
-		string m_what;
+		RippleException( std::string what )
+			: std::runtime_error( what ) { }
 };
 
 #endif //RIPPLEEXCEPTION_H

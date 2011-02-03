@@ -6,7 +6,7 @@ clean:
 rippled: Ripple.o ripple.db
 	g++ -g -o rippled rippled.cpp Ripple.o -lsoci_sqlite3 -lsoci_core
 
-tests/ripple_tests: tests/ripple_tests.cpp tests/ripple.db
+tests/ripple_tests: tests/ripple_tests.cpp Ripple.o tests/ripple.db
 	g++ -g -o tests/ripple_tests tests/ripple_tests.cpp Ripple.o -lsoci_sqlite3 -lsoci_core -lboost_unit_test_framework
 
 Ripple.o: Ripple.cpp Ripple.hpp RippleTask.hpp RippleUser.hpp 

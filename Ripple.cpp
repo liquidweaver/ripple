@@ -2,6 +2,7 @@
 #include <algorithm> //std::find
 #include <soci/soci.h>
 #include <soci/sqlite3/soci-sqlite3.h>
+#include <iostream> //DEBUGGING
 
 using namespace soci;
 
@@ -35,8 +36,26 @@ void Ripple::InsertUser( RippleUser& ru ) {
 void Ripple::GetUser( int user_id, RippleUser& user ) {
 	assert( user_id > 0 );
 	RippleUser ru;
+	indicator ind;
 	sql << "SELECT * FROM users WHERE user_id=:user_id",
-		 into( user ), use( user_id );
+		 into( user, ind ), use( user_id );
+
+	if ( !sql.got_data() ) 
+		throw RippleException( "User not found." );
+}
+
+void Ripple::DeleteUser( RippleUser& user ) {
+	DeleteUser( user.user_id );
+}
+
+void Ripple::DeleteUser( int user_id ) {
+	sql << "DELETE FROM users WHERE user_id=:user_id",
+		use( user_id );
+
+	int changes;
+	sql << "SELECT changes()", into( changes );
+	if ( changes == 0 )
+		throw RippleException( "User not found." );
 }
 
 RippleTask Ripple::CreateTask( const RippleUser& ru, const string& subject_and_body, std::time_t start, std::time_t due ) {
@@ -170,93 +189,93 @@ void Ripple::GetPossibleActions( const RippleTask& task, const RippleUser& reque
 	}
 }
 
-string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor, RIPPLE_LOG_FLAVOR flavor ) {
-	if ( task.state == RTS_CLOSED || task.state == RTS_CANCELED ) 
-		return string( "Task is finalized; no actions can be performed." );
-	if ( !task.IsAssigned( requestor ) && !task.IsStakeHolder( requestor ) )
-		return string( "You are neither assigned or the stakeholder of this task." );
+	string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor, RIPPLE_LOG_FLAVOR flavor ) {
+		if ( task.state == RTS_CLOSED || task.state == RTS_CANCELED ) 
+			return string( "Task is finalized; no actions can be performed." );
+		if ( !task.IsAssigned( requestor ) && !task.IsStakeHolder( requestor ) )
+			return string( "You are neither assigned or the stakeholder of this task." );
 
-	switch( flavor ) {
-		case RLF_CREATED: //Always allowed
-			break;
-		case RLF_NOTE:
-			if ( !task.IsStakeHolder( requestor ) && ( task.state != RTS_ACCEPTED || task.state != RTS_STARTED ) )
-				return string( "As assigned only, you can only enter notes if you have accepted or started the task." );
-			break;
-		case RLF_FORWARDED:
-			if (!task.IsAssigned( requestor ) )
-				return string( "You must be assigned to a task to forward it." );
-			if ( task.state != RTS_OPEN )
-				return string( "You cannot forward a task unless it is open." ); 
-			break;
-		case RLF_FEEDBACK:
-			if (!task.IsAssigned( requestor ) )
-				return string( "You must be assigned to a task to request feedback." );
-			if ( task.state != RTS_OPEN )
-				return string( "You cannot request feedback  for a task unless it is open." ); 
-			{ vector<int> history;
-				GetLinearizedAssignmentHistory( task, history );
-				if ( history.size() < 2 )
-					return string( "There is noone to request feedback from." );
-			}
-			break;
-		case RLF_DECLINED:
-			if (!task.IsAssigned( requestor ) )
-				return string( "You must be assigned to a task to decline it." );
-			if ( task.state != RTS_OPEN )
-				return string( "You cannot decline a task unless it is open." ); 
-			{ vector<int> history;
-				GetLinearizedAssignmentHistory( task, history );
-				if ( history.size() < 2 )
-					return string( "There is noone to decline to." );
-			}
-			break;
-		case RLF_ACCEPTED:
-			if (!task.IsAssigned( requestor ) )
-				return string( "You must be assigned to a task to accept it." );
-			if ( task.state != RTS_OPEN )
-				return string( "You cannot accept a task unless it is open." ); 
-			break;
-		case RLF_STARTED:
-			if (!task.IsAssigned( requestor ) )
-				return string( "You must be assigned to a task to start it." );
-			if ( task.state != RTS_OPEN && task.state != RTS_ACCEPTED )
-				return string( "You cannot start a task unless it is open or accepted." ); 
-			break;
-		case RLF_COMPLETED:
-			if (!task.IsAssigned( requestor ) )
-				return string( "You must be assigned to a task to complete it." );
-			if ( !(task.state == RTS_OPEN || task.state == RTS_ACCEPTED || 
-						task.state == RTS_STARTED || task.state == RTS_COMPLETED ) )
-				return string( "You cannot complete a task unless it is open, accepted, started, "
-						"or has not been completed back to the stakeholder." ); 
-			if ( task.state == RTS_COMPLETED ) {
-				vector<int> history;
-				GetLinearizedAssignmentHistory( task, history );
-				if ( history.size() < 2 )
-					return string( "There is noone to complete back to." );
-			}
-			break;
-		case RLF_REOPENED:
-			if (!task.IsStakeHolder( requestor ) )
-				return string( "You must be the stakeholder of a task to reopen it." );
-			if (task.state == RTS_OPEN )
-				return string( "You cannot reopen an open task." );
-			break;
-		case RLF_CANCELED:
-			if (!task.IsStakeHolder( requestor ) )
-				return string( "You must be the stakeholder of a task to cancel it." );
-			break;
-		case RLF_CLOSED:
-			if (!task.IsStakeHolder( requestor ) )
-				return string( "You must be the stakeholder of a task to close it." );
-			if ( !task.IsAssigned( requestor ) && task.state != RTS_COMPLETED )
-				return string( "You cannot close a task that is neither assigned to you or completed. Maybe you want to cancel it?" ); 
-			break;
-		default:
-			return string( "Unknown action." );
+		switch( flavor ) {
+			case RLF_CREATED: //Always allowed
+				break;
+			case RLF_NOTE:
+				if ( !task.IsStakeHolder( requestor ) && ( task.state != RTS_ACCEPTED || task.state != RTS_STARTED ) )
+					return string( "As assigned only, you can only enter notes if you have accepted or started the task." );
+				break;
+			case RLF_FORWARDED:
+				if (!task.IsAssigned( requestor ) )
+					return string( "You must be assigned to a task to forward it." );
+				if ( task.state != RTS_OPEN )
+					return string( "You cannot forward a task unless it is open." ); 
+				break;
+			case RLF_FEEDBACK:
+				if (!task.IsAssigned( requestor ) )
+					return string( "You must be assigned to a task to request feedback." );
+				if ( task.state != RTS_OPEN )
+					return string( "You cannot request feedback  for a task unless it is open." ); 
+				{ vector<int> history;
+					GetLinearizedAssignmentHistory( task, history );
+					if ( history.size() < 2 )
+						return string( "There is noone to request feedback from." );
+				}
+				break;
+			case RLF_DECLINED:
+				if (!task.IsAssigned( requestor ) )
+					return string( "You must be assigned to a task to decline it." );
+				if ( task.state != RTS_OPEN )
+					return string( "You cannot decline a task unless it is open." ); 
+				{ vector<int> history;
+					GetLinearizedAssignmentHistory( task, history );
+					if ( history.size() < 2 )
+						return string( "There is noone to decline to." );
+				}
+				break;
+			case RLF_ACCEPTED:
+				if (!task.IsAssigned( requestor ) )
+					return string( "You must be assigned to a task to accept it." );
+				if ( task.state != RTS_OPEN )
+					return string( "You cannot accept a task unless it is open." ); 
+				break;
+			case RLF_STARTED:
+				if (!task.IsAssigned( requestor ) )
+					return string( "You must be assigned to a task to start it." );
+				if ( task.state != RTS_OPEN && task.state != RTS_ACCEPTED )
+					return string( "You cannot start a task unless it is open or accepted." ); 
+				break;
+			case RLF_COMPLETED:
+				if (!task.IsAssigned( requestor ) )
+					return string( "You must be assigned to a task to complete it." );
+				if ( !(task.state == RTS_OPEN || task.state == RTS_ACCEPTED || 
+							task.state == RTS_STARTED || task.state == RTS_COMPLETED ) )
+					return string( "You cannot complete a task unless it is open, accepted, started, "
+							"or has not been completed back to the stakeholder." ); 
+				if ( task.state == RTS_COMPLETED ) {
+					vector<int> history;
+					GetLinearizedAssignmentHistory( task, history );
+					if ( history.size() < 2 )
+						return string( "There is noone to complete back to." );
+				}
+				break;
+			case RLF_REOPENED:
+				if (!task.IsStakeHolder( requestor ) )
+					return string( "You must be the stakeholder of a task to reopen it." );
+				if (task.state == RTS_OPEN )
+					return string( "You cannot reopen an open task." );
+				break;
+			case RLF_CANCELED:
+				if (!task.IsStakeHolder( requestor ) )
+					return string( "You must be the stakeholder of a task to cancel it." );
+				break;
+			case RLF_CLOSED:
+				if (!task.IsStakeHolder( requestor ) )
+					return string( "You must be the stakeholder of a task to close it." );
+				if ( !task.IsAssigned( requestor ) && task.state != RTS_COMPLETED )
+					return string( "You cannot close a task that is neither assigned to you or completed. Maybe you want to cancel it?" ); 
+				break;
+			default:
+				return string( "Unknown action." );
+		}
 	}
-}
 
 int Ripple::GetLastAssigned( const RippleTask& task ) {
 	vector<int> history;
