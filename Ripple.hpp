@@ -19,6 +19,9 @@ public:
 	void DeleteUser( int user_id );
 
 	RippleTask CreateTask( const RippleUser& ru, const string& subject_and_body, std::time_t start = -1, std::time_t due = -1 );
+	void GetTask( int task_id, RippleTask& task );
+	void GetLogsForTask( const RippleTask& task, vector<int>& logs );
+	RippleLog GetLog( int log_id );
 
 	void ReOpenTask( RippleTask& task, const RippleUser& requestor, const string& reason );
 

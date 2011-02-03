@@ -9,7 +9,7 @@ rippled: Ripple.o ripple.db
 tests/ripple_tests: tests/ripple_tests.cpp Ripple.o tests/ripple.db
 	g++ -g -o tests/ripple_tests tests/ripple_tests.cpp Ripple.o -lsoci_sqlite3 -lsoci_core -lboost_unit_test_framework
 
-Ripple.o: Ripple.cpp Ripple.hpp RippleTask.hpp RippleUser.hpp 
+Ripple.o: Ripple.cpp Ripple.hpp RippleTask.hpp RippleUser.hpp RippleLog.hpp
 	g++ -g -c Ripple.cpp -I/usr/local/include/soci 
 
 ripple.db: ripple_schema.sql

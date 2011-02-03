@@ -7,12 +7,16 @@
 class RippleLog {
 public:
 	RippleLog( const RippleUser& creator, const RippleTask& task, RIPPLE_LOG_FLAVOR flavor, const string& subject_and_body ) 
-	: user_id( creator.user_id ), task_id( task.task_id ), flavor( flavor ), body( subject_and_body ) {
+	: log_id( -1 ), user_id( creator.user_id ), task_id( task.task_id ), flavor( flavor ), body( subject_and_body ) {
 		created_date = time( NULL );
 	}
+	RippleLog() : log_id( -1 ), created_date( -1 ) { }
 
 	string Subject() const {
-		return body.substr( 0, body.find_first_of( "\r\n" ) );
+		size_t pos = body.find_first_of( "\r\n" );
+		if ( pos == string::npos )
+			return body;
+		return body.substr( 0, pos );
 	}
 
 	int log_id;
@@ -31,10 +35,11 @@ template<> struct type_conversion<RippleLog>
     static void from_base(values const& v, indicator ind, RippleLog& p) {
 	 	if ( ind == i_null )
 			throw logic_error( "Cannot load log entry: database reports NULL" );
+		std:tm created_tm;
 	 	p.log_id = v.get<int>("log_id");
 		p.flavor = static_cast<RIPPLE_LOG_FLAVOR>( v.get<int>("flavor") );
 		p.body = v.get<string>("body");
-		p.created_date = v.get<std::time_t>("created_date");
+		p.created_date  = v.get<int>("created_date");
 		p.user_id = v.get<int>("user_id");
 		p.task_id = v.get<int>("task_id");
     }

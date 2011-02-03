@@ -60,8 +60,8 @@ void Ripple::DeleteUser( int user_id ) {
 
 RippleTask Ripple::CreateTask( const RippleUser& ru, const string& subject_and_body, std::time_t start, std::time_t due ) {
 	if ( subject_and_body == "" )
-
 		throw RippleException( "You must enter a description when creating a task." );
+
 	RippleTask rt( ru );
 	rt.start_date = start;
 	rt.due_date = due;
@@ -71,6 +71,38 @@ RippleTask Ripple::CreateTask( const RippleUser& ru, const string& subject_and_b
 	InsertLog( rl );
 
 	return rt;
+}
+
+void Ripple::GetTask( int task_id, RippleTask& task ) {
+	assert( task_id > 0 );
+
+	sql << "SELECT * FROM tasks WHERE task_id=:task_id",
+		into( task ), use( task_id );
+	
+	if ( !sql.got_data() )
+		throw RippleException( "Task not found." );
+}
+
+void Ripple::GetLogsForTask( const RippleTask& task, vector<int>& logs ) {
+	logs.clear();
+	logs.resize( 500 );
+	
+	sql << "SELECT log_id FROM logs WHERE task_id=:task_id",
+		into( logs ), use( task.task_id );
+	
+	if ( !sql.got_data() )
+		throw RippleException( "No logs found. Does task exist?" );
+}
+
+RippleLog Ripple::GetLog( int log_id ) {
+	RippleLog log;
+	sql << "SELECT * FROM logs WHERE log_id=:log_id",
+			into( log ), use( log_id );
+
+	if ( !sql.got_data() )
+		throw RippleException( "Log not found." );
+
+	return log;
 }
 
 void Ripple::ReOpenTask( RippleTask& task, const RippleUser& requestor, const string& reason ) {
@@ -275,6 +307,8 @@ void Ripple::GetPossibleActions( const RippleTask& task, const RippleUser& reque
 			default:
 				return string( "Unknown action." );
 		}
+
+		return string();
 	}
 
 int Ripple::GetLastAssigned( const RippleTask& task ) {
