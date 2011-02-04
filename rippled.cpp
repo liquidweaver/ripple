@@ -15,22 +15,24 @@
 #include <string>
 #include <memory>
 #include "Ripple.hpp"
+#include "RippleInterface.hpp"
+
+static const char *options[] = {
+  "document_root", "html",
+  "listening_ports", "8080",
+  "num_threads", "5",
+  NULL
+};
 
 using namespace std;
 
 int main( int argc, char* argv[] ) {
-	Ripple ripple;
-	RippleUser ru( "Joshua Weaver", "josh@metropark.com");
-	ripple.InsertUser( ru );
-	cout << ru.user_id << ' '
-			<< ru.name << ' '
-			<< ru.email << endl;
+  auto_ptr<Ripple> ripple( new Ripple() );
+  auto_ptr<RippleInterface> ri( RippleInterface::Instance( ripple.get(), options ) );
 
-	RippleTask rt = ripple.CreateTask( ru, "This is a test task\nIsn't it grand." );
+  cout << "Press any key to stop..." << endl;
+  cin.get();
 
-	cout << rt.task_id << ' '
-		<< rt.state << ' ' 
-		<< rt.assigned << endl;
-
-	return 0;
+  return 0;
 }
+// vim: ts=2 sw=2 ai et

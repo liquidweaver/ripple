@@ -51,6 +51,7 @@ BOOST_AUTO_TEST_CASE( task_creation ) {
 	log = ripple.GetLog( logs[1] );
 	BOOST_CHECK_EQUAL( log.body, "I need you to do this." );
 	BOOST_CHECK_EQUAL( log.Subject(), "I need you to do this." );
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
