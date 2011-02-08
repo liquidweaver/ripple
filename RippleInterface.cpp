@@ -5,8 +5,9 @@
 #include <string.h> //Some helper functions for the c glue
 
 RippleInterface* RippleInterface::instance = NULL;
-pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
+pthread_rwlock_t RippleInterface::rwlock = PTHREAD_RWLOCK_INITIALIZER;
 const char * RippleInterface::authorize_url = "/authorize";
+const char * RippleInterface::logout_url = "/logout";
 const char * RippleInterface::login_url = "/login.html";
 const char * RippleInterface::ajax_reply_start =
   "HTTP/1.1 200 OK\r\n"
@@ -43,12 +44,13 @@ void * RippleInterface::event_handler(enum mg_event event,
   RippleInterface* inst = RippleInterface::instance;
 
   if (event == MG_NEW_REQUEST) {
-    if (!request_info->is_ssl) {
-      inst->redirect_to_ssl(conn, request_info);
-    } else if (!inst->is_authorized(conn, request_info)) {
+    if (!inst->is_authorized(conn, request_info)) {
       inst->redirect_to_login(conn, request_info);
-    } else if (strcmp(request_info->uri, authorize_url) == 0) {
+    } else if (strcmp(request_info->uri, authorize_url ) == 0) {
       inst->authorize(conn, request_info);
+    } else if (strcmp(request_info->uri, logout_url ) == 0) {
+      inst->logout(conn, request_info);
+      inst->redirect_to_login(conn, request_info);
     } else if (strcmp(request_info->uri, "/ajax/get_data") == 0) {
       //Call ajax dataa requestor
     } else if (strcmp(request_info->uri, "/ajax/do_action") == 0) {
@@ -76,6 +78,10 @@ int RippleInterface::is_authorized(const struct mg_connection *conn,
       !strcmp(request_info->uri, authorize_url)) {
     return 1;
   }
+  else if ( strlen( request_info->uri ) > 4 &&
+            !strcmp( &request_info->uri[ strlen( request_info->uri ) - 4 ], ".css" ) ) {
+    return 1;
+  }
 
   pthread_rwlock_rdlock(&rwlock);
   if ((session = get_session(conn)) != NULL) {
@@ -90,16 +96,14 @@ int RippleInterface::is_authorized(const struct mg_connection *conn,
   return authorized;
 }
 
-void RippleInterface::redirect_to_ssl(struct mg_connection *conn,
-                            const struct mg_request_info *request_info) {
-  const char *p, *host = mg_get_header(conn, "Host");
-  if (host != NULL && (p = strchr(host, ':')) != NULL) {
-    mg_printf(conn, "HTTP/1.1 302 Found\r\n"
-              "Location: https://%.*s:8082/%s:8082\r\n\r\n",
-              p - host, host, request_info->uri);
-  } else {
-    mg_printf(conn, "%s", "HTTP/1.1 500 Error\r\n\r\nHost: header is not set");
-  }
+void RippleInterface::logout( const struct mg_connection * conn, const struct mg_request_info* request_info ) {
+
+  struct session* session;
+  
+  pthread_rwlock_rdlock(&rwlock);
+  if ((session = get_session(conn)) != NULL) 
+     session->expire = 0;
+  pthread_rwlock_unlock(&rwlock);
 }
 
 void RippleInterface::redirect_to_login(struct mg_connection *conn,
@@ -114,26 +118,20 @@ void RippleInterface::redirect_to_login(struct mg_connection *conn,
 // Login page form sends user name and password to this endpoint.
 void RippleInterface::authorize(struct mg_connection *conn,
                       const struct mg_request_info *request_info) {
-  char user_as_string[MAX_USER_LEN], password[MAX_USER_LEN];
+  char email[MAX_EMAIL_LEN], password[MAX_EMAIL_LEN];
   struct session *session;
 
   // Fetch user name and password.
-  get_qsvar(request_info, "user", user_as_string, sizeof(user_as_string));
+  get_qsvar(request_info, "email", email, sizeof(email));
   get_qsvar(request_info, "password", password, sizeof(password));
-  int user = atoi( user_as_string );
+  printf( "authorize - email: %s, password: %s\n", email, password );
 
-  if (check_password(user, password) && (session = new_session()) != NULL) {
+  if (check_password(email, password) && (session = new_session()) != NULL) {
     // Authentication success:
     //   1. create new session
     //   2. set session ID token in the cookie
     //   3. remove original_url from the cookie - not needed anymore
     //   4. redirect client back to the original URL
-    //
-    // The most secure way is to stay HTTPS all the time. However, just to
-    // show the technique, we redirect to HTTP after the successful
-    // authentication. The danger of doing this is that session cookie can
-    // be stolen and an attacker may impersonate the user.
-    // Secure application must use HTTPS all the time.
     snprintf(session->random, sizeof(session->random), "%d", rand());
     generate_session_id(session->session_id, session->random, session->user_id );
     mg_printf(conn, "HTTP/1.1 302 Found\r\n"
@@ -193,7 +191,7 @@ struct session* RippleInterface::new_session(void) {
   return i == MAX_SESSIONS ? NULL : &sessions[i];
 }
 
-bool RippleInterface::check_password( int user, const char* pass ) {
+bool RippleInterface::check_password( const char* email, const char* pass ) {
   //STUB
   return true;
 }

@@ -21,6 +21,7 @@ static const char *options[] = {
   "document_root", "html",
   "listening_ports", "8080",
   "num_threads", "5",
+  "index_files", "main.html",
   NULL
 };
 
