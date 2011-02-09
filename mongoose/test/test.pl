@@ -50,7 +50,7 @@ sub get_num_of_log_entries {
 
 # Send the request to the 127.0.0.1:$port and return the reply
 sub req {
-  my ($request, $inc) = @_;
+  my ($request, $inc, $timeout) = @_;
   my $sock = IO::Socket::INET->new(Proto=>"tcp",
     PeerAddr=>'127.0.0.1', PeerPort=>$port);
   fail("Cannot connect: $!") unless $sock;
@@ -59,8 +59,12 @@ sub req {
     last unless print $sock $byte;
     select undef, undef, undef, .001 if length($request) < 256;
   }
-  my @lines = <$sock>;
-  my $out = join '', @lines;
+  my ($out, $buf) = ('', '');
+  eval {
+    alarm $timeout if $timeout;
+    $out .= $buf while (sysread($sock, $buf, 1024) > 0);
+    alarm 0 if $timeout;
+  };
   close $sock;
 
   $num_requests += defined($inc) ? $inc : 1;
@@ -129,6 +133,7 @@ sub kill_spawned_child {
 
 unlink @files_to_delete;
 $SIG{PIPE} = 'IGNORE';
+$SIG{ALRM} = sub { die "timeout\n" };
 #local $| =1;
 
 # Make sure we export only symbols that start with "mg_", and keep local
@@ -175,6 +180,17 @@ o("GET /hello.txt HTTP/1.0\n\n", 'Content-Length: 17\s',
 o("GET /%68%65%6c%6c%6f%2e%74%78%74 HTTP/1.0\n\n",
   'HTTP/1.1 200 OK', 'URL-decoding');
 
+# Break CGI reading after 1 second. We must get full output.
+# Since CGI script does sleep, we sleep as well and increase request count
+# manually.
+my $slow_cgi_reply;
+print "==> Slow CGI output ... ";
+fail('Slow CGI output forward reply=', $slow_cgi_reply) unless
+  ($slow_cgi_reply = req("GET /timeout.cgi HTTP/1.0\r\n\r\n", 0, 1)) =~ /Some data/s;
+print "OK\n";
+sleep 3;
+$num_requests++;
+
 # '+' in URI must not be URL-decoded to space
 write_file("$root/a+.txt", '');
 o("GET /a+.txt HTTP/1.0\n\n", 'HTTP/1.1 200 OK', 'URL-decoding, + in URI');
@@ -217,6 +233,8 @@ o("GET /ta/x/ HTTP/1.0\n\n", "SCRIPT_NAME=/ta/x/index.cgi",
 #o("GET /hello.txt HTTP/1.1\n\n   GET /hello.txt HTTP/1.0\n\n",
 #  'HTTP/1.1 200.+keep-alive.+HTTP/1.1 200.+close',
 #  'Request pipelining', 2);
+
+o("GET * HTTP/1.0\n\n", "^HTTP/1.1 404", '* URI');
 
 my $mime_types = {
   html => 'text/html',
@@ -288,11 +306,19 @@ o("GET /$test_dir_uri/sort/?dd HTTP/1.0\n\n",
 
 unless (scalar(@ARGV) > 0 and $ARGV[0] eq "basic_tests") {
   # Check that .htpasswd file existence trigger authorization
-  write_file("$root/.htpasswd", '');
+  write_file("$root/.htpasswd", 'user with space, " and comma:mydomain.com:5deda12442309cbdcdffc6b2737a894f');
   o("GET /hello.txt HTTP/1.1\n\n", '401 Unauthorized',
     '.htpasswd - triggering auth on file request');
   o("GET / HTTP/1.1\n\n", '401 Unauthorized',
     '.htpasswd - triggering auth on directory request');
+
+  # Test various funky things in an authentication header.
+  o("GET /hello.txt HTTP/1.0\nAuthorization: Digest   eq== empty=\"\", empty2=, quoted=\"blah foo bar, baz\\\"\\\" more\\\"\", unterminatedquoted=\" doesn't stop\n\n",
+    '401 Unauthorized', 'weird auth values should not cause crashes');
+  my $auth_header = "Digest username=\"user with space, \\\" and comma\", ".
+    "realm=\"mydomain.com\", nonce=\"1291376417\", uri=\"/\",".
+    "response=\"e8dec0c2a1a0c8a7e9a97b4b5ea6a6e6\", qop=auth, nc=00000001, cnonce=\"1a49b53a47a66e82\"";
+  o("GET /hello.txt HTTP/1.0\nAuthorization: $auth_header\n\n", 'HTTP/1.1 200 OK', 'GET regular file with auth');
   unlink "$root/.htpasswd";
 
   o("GET /env.cgi HTTP/1.0\n\r\n", 'HTTP/1.1 200 OK', 'GET CGI file');
@@ -363,6 +389,8 @@ unless (scalar(@ARGV) > 0 and $ARGV[0] eq "basic_tests") {
 }
 
 sub do_PUT_test {
+  # This only works because mongoose currently doesn't look at the nonce.
+  # It should really be rejected...
   my $auth_header = "Authorization: Digest  username=guest, ".
   "realm=mydomain.com, nonce=1145872809, uri=/put.txt, ".
   "response=896327350763836180c61d87578037d9, qop=auth, ".
@@ -424,6 +452,10 @@ sub do_embedded_test {
   my $my_var = 'x' x 64000;
   o("POST /test_get_var HTTP/1.0\nContent-Length: 64007\n\n".
     "my_var=$my_var", 'Value size: \[64000\]', 'mg_get_var 10', 0);
+
+  # Other methods should also work
+  o("PUT /test_get_var HTTP/1.0\nContent-Length: 10\n\n".
+    "my_var=foo", 'Value: \[foo\]', 'mg_get_var 11', 0);
 
   o("POST /test_get_request_info?xx=yy HTTP/1.0\nFoo: bar\n".
     "Content-Length: 3\n\na=b",

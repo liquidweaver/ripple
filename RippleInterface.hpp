@@ -25,19 +25,18 @@ class RippleInterface {
 
 	private:
 		RippleInterface( Ripple* ripple, const char** options );
-		static void * event_handler(enum mg_event event, struct mg_connection *conn, 
-				const struct mg_request_info *request_info);
+		static void * event_handler( mg_event event, mg_connection *conn, const mg_request_info *request_info);
 		int is_authorized(const struct mg_connection *conn, const struct mg_request_info* request_info );
 		void logout( const struct mg_connection* conn, const struct mg_request_info* request_info );
-		void redirect_to_login(struct mg_connection *conn, const struct mg_request_info *request_info); 
+		void redirect( struct mg_connection *conn, const struct mg_request_info *request_info, const char* target );
 		// A handler for the /authorize endpoint.
 		// Login page form sends user name and password to this endpoint.
-		void authorize(struct mg_connection *conn, const struct mg_request_info *request_info); 
+		void authorize( struct mg_connection *conn, const struct mg_request_info *request_info, const string& post_data );
+		void signup( struct mg_connection *conn, const struct mg_request_info *request_info, const string& post_data );
 		struct session* get_session(const struct mg_connection *conn);
 		void generate_session_id(char *buf, const char *random, const int user_id );
-		void get_qsvar(const struct mg_request_info *request_info, const char *name, char *dst, size_t dst_len);
+		string get_post_var( const string& post_data, const string& name );
 		struct session *new_session(void);
-		bool check_password( const char* email, const char* pass );
 
 		static RippleInterface* instance;
 		// Protects sessions and access to the Ripple class
@@ -48,6 +47,8 @@ class RippleInterface {
 		static const char* authorize_url;
 		static const char* logout_url;
 		static const char* login_url;
+		static const char* signup_url;
+		static const char* signup_ajax_url;
 		static const char* ajax_reply_start;
 };
 

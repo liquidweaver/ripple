@@ -9,4 +9,10 @@ class RippleException : public std::runtime_error {
 			: std::runtime_error( what ) { }
 };
 
+class RippleInterfaceException : public RippleException {
+	public:
+		RippleInterfaceException( std::string what )
+			: RippleException( what ) { }
+};
+
 #endif //RIPPLEEXCEPTION_H

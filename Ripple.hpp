@@ -14,6 +14,7 @@ public:
 	void InsertUser( RippleUser& ru );
 	
 	void GetUser( int user_id, RippleUser& user );
+	RippleUser GetUserFromEmailAndPassword( const string& email, const string& password );
 
 	void DeleteUser( RippleUser& user );
 	void DeleteUser( int user_id );

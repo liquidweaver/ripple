@@ -10,10 +10,11 @@ class RippleUser {
 public:
 	RippleUser( string name, string email )
 	: user_id( -1 ), name( name ), email( email ) { }
-	RippleUser() : user_id( -1 ), name( "UNSET" ), email( "UNSET" ) { }
+	RippleUser() : user_id( -1 ), name( "UNSET" ), email( "UNSET" ), password( "UNSET" ) { }
 	int user_id;
 	string name;
 	string email;
+	string password;
 };
 
 namespace soci
@@ -27,12 +28,14 @@ template<> struct type_conversion<RippleUser>
 		 p.user_id = v.get<int>("user_id");
 		 p.name = v.get<std::string>("name");
 		 p.email = v.get<std::string>("email");
+		 p.password = v.get<std::string>("password");
     }
 
     static void to_base(const RippleUser& p, values& v, indicator& ind) {
 	 	v.set("user_id", p.user_id, p.user_id == -1 ? i_null: i_ok );
 	 	v.set("name", p.name );
 	 	v.set("email", p.email );
+	 	v.set("password", p.password );
 
 		ind = i_ok;
     }

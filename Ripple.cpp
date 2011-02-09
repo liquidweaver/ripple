@@ -24,13 +24,24 @@ Ripple::Ripple() {
 	KnownFlavors.push_back( RLF_CANCELED );
 }
 
-//TODO: Insert failure exception
 void Ripple::InsertUser( RippleUser& ru ) {
 	assert( ru.user_id == -1 );
-	sql << "INSERT INTO users VALUES (:user_id, :name, :email)",
+
+	if ( ru.email == "UNSET" || ru.email == "" )
+		throw RippleException( "Email must be specified" );
+	if ( ru.name == "UNSET" || ru.name == "" )
+		throw RippleException( "Name must be specified" );
+	if ( ru.password == "UNSET" || ru.password == "" )
+		throw RippleException( "Password must be specified" );
+	
+
+	sql << "INSERT INTO users VALUES (:user_id, :name, :email, :password)",
 		 use( static_cast<const RippleUser&>( ru ) );
 
 	sql << "SELECT last_insert_rowid()", into( ru.user_id );
+
+	if ( !sql.got_data() )
+		throw RippleException( "User could not be inserted." );
 }
 
 void Ripple::GetUser( int user_id, RippleUser& user ) {
@@ -42,6 +53,18 @@ void Ripple::GetUser( int user_id, RippleUser& user ) {
 
 	if ( !sql.got_data() ) 
 		throw RippleException( "User not found." );
+}
+
+RippleUser Ripple::GetUserFromEmailAndPassword( const string& email, const string& password ) {
+	RippleUser ru;
+	indicator ind;
+	sql << "SELECT * FROM users WHERE email=:email AND password=:password",
+				use(ru, ind );
+
+	if ( !sql.got_data() )
+		throw RippleException( "Invalid email or password" );
+
+	return ru;
 }
 
 void Ripple::DeleteUser( RippleUser& user ) {
