@@ -16,7 +16,7 @@
 			$('#signup_form').submit( function() {
 				//$('<div>').addClass('message success').html("User creation successful.<br />Redirecting you to login page...").appendTo('div.inner');
 				 $.post( "/signup", { name: $("#name").val(), email: $("#email").val(), password: $("#password").val() }, function (data) {
-				 	$("#results").fadeOut("fast");
+				 	$("#results").hide();
 				 	if ( data.error_msg == "" ) {
 						$("#signup_btn").attr('disabled', 'disabled');
 						$("#results").removeClass("error").addClass("success").html("User creation successful.<br />Redirecting you to login page in 3 seconds...").fadeIn("slow");

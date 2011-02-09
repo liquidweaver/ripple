@@ -5,6 +5,7 @@
 /* Body */
 	body {
 		background: #F5F4EF;
+		background-image: url('lorenz.jpg');
 		color: #000305;
 		font-size: 87.5%; /* Base font size: 14px */
 		font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
@@ -295,11 +296,12 @@ div.success {
 
 div.error {
 	background-image: url("error.png") !important;
-	background-position: .25em 50% !important;
+	background-position: .5em 50% !important;
 	background-repeat: no-repeat !important;
-	padding-left: 45px;
+	padding: 1em 1em .5em 3.5em;
 	min-height: 3em;
 	vertical-align: middle;
+	font-weight: bold;
 }
 
 .validate_error { 
@@ -308,6 +310,4 @@ div.error {
 	-webkit-border-radius: 5px;
 	background-color: black;
 	color:white;
-	
 }
-

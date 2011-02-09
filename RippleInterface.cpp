@@ -102,6 +102,10 @@ int RippleInterface::is_authorized(const struct mg_connection *conn,
             !strcmp( &request_info->uri[ strlen( request_info->uri ) - 4 ], ".png" ) ) {
     return 1;
   }
+  else if ( strlen( request_info->uri ) > 4 &&
+            !strcmp( &request_info->uri[ strlen( request_info->uri ) - 4 ], ".jpg" ) ) {
+    return 1;
+  }
   else if ( strlen( request_info->uri ) > 3 &&
             !strcmp( &request_info->uri[ strlen( request_info->uri ) - 3 ], ".js" ) ) {
     return 1;

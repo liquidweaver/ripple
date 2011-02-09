@@ -8,6 +8,7 @@ BOOST_AUTO_TEST_SUITE( RippleTests )
 BOOST_AUTO_TEST_CASE( user_creation_and_deletion ) {
 	Ripple ripple;
 	RippleUser ru( "Joshua Weaver", "josh@metropark.com" );
+	ru.password = "password";
 	ripple.InsertUser( ru );
 
 	BOOST_REQUIRE_GT( ru.user_id, 0 );
@@ -24,10 +25,12 @@ BOOST_AUTO_TEST_CASE( user_creation_and_deletion ) {
 BOOST_AUTO_TEST_CASE( task_creation ) {
 	Ripple ripple;
 	RippleUser ru( "Test User", "test@exampledomain.com" );
+	ru.password = "password";
 	ripple.InsertUser( ru );
 	BOOST_REQUIRE_GT( ru.user_id, 0 );
 
 	RippleUser ru2( "Test User 2", "test2@exampledomain.com" );
+	ru2.password = "password";
 	ripple.InsertUser( ru2 );
 	BOOST_REQUIRE_GT( ru2.user_id, 0 );
 

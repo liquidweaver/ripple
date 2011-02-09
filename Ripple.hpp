@@ -25,21 +25,13 @@ public:
 	RippleLog GetLog( int log_id );
 
 	void ReOpenTask( RippleTask& task, const RippleUser& requestor, const string& reason );
-
 	void CancelTask( RippleTask& task, const RippleUser& requestor, const string& reason );
-
 	void AcceptTask( RippleTask& task, const RippleUser& requestor, string reason = "" );
-
 	void ForwardTask( RippleTask& task, const RippleUser& requestor, const RippleUser& target, string reason = "" );
-
 	void RequestFeedback( RippleTask& task, const RippleUser& requestor, const string& reason );
-
 	void DeclineTask( RippleTask& task, const RippleUser& requestor, const string& reason );
-
 	void StartTask( RippleTask& task, const RippleUser& requestor, string reason = "" );
-
 	void CompleteTask( RippleTask& task, const RippleUser& requestor, string reason = "" );
-
 	void AddNoteToTask( const RippleTask& task, const RippleUser& requestor, const string& body );
 
 	/** 
@@ -81,9 +73,7 @@ protected:
 	void GetLinearizedAssignmentHistory( const RippleTask& task, vector<int>& history  );
 
 	void InsertTask( RippleTask& task );
-
 	void InsertLog( RippleLog& log );
-
 	void UpdateTask( const RippleTask& task, RippleLog& log );
 
 	soci::session sql;

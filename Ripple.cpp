@@ -28,11 +28,11 @@ void Ripple::InsertUser( RippleUser& ru ) {
 	assert( ru.user_id == -1 );
 
 	if ( ru.email == "UNSET" || ru.email == "" )
-		throw RippleException( "Email must be specified" );
+		throw RippleException( "Email must be specified." );
 	if ( ru.name == "UNSET" || ru.name == "" )
-		throw RippleException( "Name must be specified" );
+		throw RippleException( "Name must be specified." );
 	if ( ru.password == "UNSET" || ru.password == "" )
-		throw RippleException( "Password must be specified" );
+		throw RippleException( "Password must be specified." );
 	
 
 	sql << "INSERT INTO users VALUES (:user_id, :name, :email, :password)",
@@ -59,7 +59,7 @@ RippleUser Ripple::GetUserFromEmailAndPassword( const string& email, const strin
 	RippleUser ru;
 	indicator ind;
 	sql << "SELECT * FROM users WHERE email=:email AND password=:password",
-				use(ru, ind );
+				into(ru, ind ), use( email ), use( password );
 
 	if ( !sql.got_data() )
 		throw RippleException( "Invalid email or password" );
