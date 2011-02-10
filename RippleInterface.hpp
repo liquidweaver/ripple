@@ -33,6 +33,8 @@ class RippleInterface {
 		// Login page form sends user name and password to this endpoint.
 		void authorize( struct mg_connection *conn, const struct mg_request_info *request_info, const string& post_data );
 		void signup( struct mg_connection *conn, const struct mg_request_info *request_info, const string& post_data );
+		void query( struct mg_connection *conn, const struct mg_request_info *request_info,
+						const string& post_data, const RippleUser& user );
 		struct session* get_session(const struct mg_connection *conn);
 		void generate_session_id(char *buf, const char *random, const int user_id );
 		string get_post_var( const string& post_data, const string& name );
@@ -41,8 +43,8 @@ class RippleInterface {
 		static RippleInterface* instance;
 		// Protects sessions and access to the Ripple class
 		static pthread_rwlock_t rwlock;
-		Ripple* ripple;
 		session sessions[MAX_SESSIONS];  // Current sessions
+		Ripple* ripple;
 		//constants
 		static const char* authorize_url;
 		static const char* logout_url;
@@ -50,6 +52,7 @@ class RippleInterface {
 		static const char* signup_url;
 		static const char* signup_ajax_url;
 		static const char* ajax_reply_start;
+		static const char* http500; 
 };
 
 #endif //RIPPLEINTERFACE_HPP

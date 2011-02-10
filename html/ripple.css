@@ -6,6 +6,9 @@
 	body {
 		background: #F5F4EF;
 		background-image: url('lorenz.jpg');
+		background-repeat: no-repeat;
+		background-position: 30% 30%;
+		background-attachment: fixed;
 		color: #000305;
 		font-size: 87.5%; /* Base font size: 14px */
 		font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
@@ -36,12 +39,12 @@ a:link, a:visited {
 	padding: 0 1px;
 	text-decoration: underline;
 }
-a:hover, a:active {
-	background-color: #C74350;
+a:hover {
 	color: #fff;
 	text-decoration: none;
-	text-shadow: 1px 1px 1px #333;
+	text-shadow: 1px 1px 1px white;
 }
+
 
 /* Paragraphs */
 p {margin-bottom: 1.143em;}
@@ -113,14 +116,6 @@ table {margin: .5em auto 1.5em auto; width: 98%;}
 	text-decoration: none;
 }
 
-#banner h1 a:hover, #banner h1 a:active {
-	background: none;
-	color: #C74350;
-	text-shadow: none;
-}
-
-#banner h1 strong {font-size: 0.36em; font-weight: normal;}
-
 /* Main Nav */
 #banner nav {
 	background: #000305;
@@ -144,11 +139,10 @@ table {margin: .5em auto 1.5em auto; width: 98%;}
 	padding: 5px 1.5em;
 	text-decoration: none;
 }
-#banner nav a:hover, #banner nav a:active,
 #banner nav .active a:link, #banner nav .active a:visited {
-	background: #C74451;
+	background-color: #C74451;
 	color: #fff;
-	text-shadow: none;
+	text-shadow: 1px 1px 1px #333;
 }
 
 a.logout {
@@ -167,6 +161,12 @@ a.logout:hover {
 	text-shadow: 1px 1px 1px white !important;
 }
 
+span.stuff {
+	color:#C74451;	
+	display: inline-block;
+	padding: 5px 1.5em;
+}
+
 #banner nav li:first-child a {
 	border-top-left-radius: 5px;
 	-moz-border-radius-topleft: 5px;
@@ -175,6 +175,7 @@ a.logout:hover {
 	border-bottom-left-radius: 5px;
 	-moz-border-radius-bottomleft: 5px;
 	-webkit-border-bottom-left-radius: 5px;
+	padding: 3px 1em;
 }
 
 fieldset {
@@ -310,4 +311,8 @@ div.error {
 	-webkit-border-radius: 5px;
 	background-color: black;
 	color:white;
+}
+
+span.task_stakeholder {
+	font-weight: bold;
 }

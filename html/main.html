@@ -10,13 +10,42 @@
 	<!--[if lt IE 7]>
 		 <link rel="stylesheet" type="text/css" media="all" href="css/ie6.css"/><![endif]-->
 </head>
+<script type="text/javascript" src="jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="ripple.js"></script>
+<script type="text/javascript">
+	$(document).ready( function() {
+		$('#menu_assigned a').click( function() {
+			ripple.change_view('assigned');
+			$('#banner li').removeClass('active');
+			$(this).parent().addClass('active');
+		});
+		$('#menu_accepted a').click( function() {
+			ripple.change_view('accepted');
+			$('#banner li').removeClass('active');
+			$(this).parent().addClass('active');
+		});
+		$('#menu_stakeholder a').click( function() {
+			ripple.change_view('stakeholder');
+			$('#banner li').removeClass('active');
+			$(this).parent().addClass('active');
+		});
+		$('#menu_watching a').click( function() {
+			ripple.change_view('watching');
+			$('#banner li').removeClass('active');
+			$(this).parent().addClass('active');
+		});
+	});
+</script>
 <body>
 	<header id="banner" class="body"> 
 		<nav><ul>
-			<li class="active"><a href="#">Assigned to Me</a></li>
-			<li><a href="#">Stuff I Need Done</a></li>
-			<li><a href="#">Watching</a></li>
+			<li><span class='stuff'>Stuff I...</span></li>
+			<li id="menu_assigned" class="active"><a href="#" >need to decide on</a></li>
+			<li id="menu_accepted"><a href="#">need to do</a></li>
+			<li id="menu_stakeholder"><a href="#">need done</a></li>
+			<li id="menu_watching"><a href="#">am watching</a></li>
 		</ul><a class="logout" href="/logout">logout</a></nav>
 	</header>
+	<div id="content"></div>
 </body>
 </html>

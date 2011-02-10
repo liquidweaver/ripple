@@ -9,20 +9,39 @@
 		 <script src="js/IE8.js" type="text/javascript"></script><![endif]-->
 	<!--[if lt IE 7]>
 		 <link rel="stylesheet" type="text/css" media="all" href="css/ie6.css"/><![endif]-->
+	<script type="text/javascript" src="jquery-1.4.2.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready( function() {
+			$('#login_form').submit( function() {
+				 $.post( "/authorize", { email: $("#email").val(), password: $("#password").val() }, function (data) {
+				 	$("#results").hide();
+				 	if ( data.error_msg == "" ) {
+						$("#login_btn").attr('disabled', 'disabled');
+						self.location="/"; 
+					}
+					else {
+						$("#results").addClass("error").html(data.error_msg).fadeIn("slow");
+					}
+				 }, "json");
+				 return false;
+			});
+		});
+	</script>
 </head>
 <body>
-<form action="/authorize" method="post">
+<form id="login_form" action="/authorize" method="post">
 	<div id="login" class="container">
 	<div class="inner">
 	<fieldset>
 	<legend>Ripple Login</legend>
 		<p> <label for="email">email</label>
-		<input type="email" name="email" /> </p>
+		<input type="email" id="email" required="required" /> </p>
 		<p> <label for="password">password</label>
-		<input type="password" name="password" /> </p>
-		<p class="submit"> <input type="submit" value="Login" />
+		<input type="password" id="password" required="required" /> </p>
+		<p class="submit"> <input id="login_btn" type="submit" value="Login" />
 		<a href="signup.html">Signup</a></p>
 	</fieldset>
+	<div id="results" class="message" style="display:none;"></div>
 	</div>
 	</div>
 </form>
