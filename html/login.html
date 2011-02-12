@@ -30,18 +30,18 @@
 </head>
 <body>
 <form id="login_form" action="/authorize" method="post">
-	<div id="login" class="container">
+	<div id="modal" class="container">
 	<div class="inner">
 	<fieldset>
 	<legend>Ripple Login</legend>
 		<p> <label for="email">email</label>
-		<input type="email" id="email" required="required" /> </p>
+		<input type="email" id="email" required="required" autofocus="autofocus" /> </p>
 		<p> <label for="password">password</label>
 		<input type="password" id="password" required="required" /> </p>
 		<p class="submit"> <input id="login_btn" type="submit" value="Login" />
 		<a href="signup.html">Signup</a></p>
 	</fieldset>
-	<div id="results" class="message" style="display:none;"></div>
+	<div id="results" class="message"></div>
 	</div>
 	</div>
 </form>

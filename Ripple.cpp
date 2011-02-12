@@ -3,10 +3,28 @@
 #include <soci/soci.h>
 #include <soci/sqlite3/soci-sqlite3.h>
 #include <iostream> //DEBUGGING
+#include "JSON.hpp"
 
 using namespace soci;
 
+Ripple* Ripple::instance = NULL;
 backend_factory const &backEnd = *soci::factory_sqlite3();
+
+Ripple* Ripple::Instance() {
+	if ( instance == NULL )
+		instance = new Ripple();
+	
+	return instance;
+}
+
+void Ripple::Release() {
+	if ( instance != NULL )
+		delete instance;
+	
+	instance = NULL;
+
+}
+
 Ripple::Ripple() {
 	sql.open( backEnd, "ripple.db"  );
 	sql << "PRAGMA foreign_keys = ON";
@@ -106,15 +124,15 @@ void Ripple::GetTask( int task_id, RippleTask& task ) {
 		throw RippleException( "Task not found." );
 }
 
-void Ripple::GetUsersAssignedTasks( int user_id, vector<int>& tasks, bool includeAccepted = true ) {
+void Ripple::GetUsersAssignedTasks( int user_id, vector<int>& tasks, bool accepted ) {
 	assert( user_id > 0 );
+	tasks.resize( 200 );
 
-	if ( includeAccepted ) 
-		sql << "SELECT task_id FROM tasks WHERE assigned=:user_id",
-			into( tasks ), user( user_id );
-1 OMG SYNTAX ERROR
-//TODO finish
-	
+	int begin = accepted ? RTS_ACCEPTED : RTS_OPEN;
+	int end = accepted ? RTS_CLOSED : RTS_ACCEPTED;
+
+	sql << "SELECT task_id FROM tasks WHERE assigned=:user_id AND state >= :begin AND state < :end",
+		 into( tasks ), use( user_id ), use( begin ), use( end );
 }
 
 void Ripple::GetLogsForTask( const RippleTask& task, vector<int>& logs ) {
@@ -128,15 +146,14 @@ void Ripple::GetLogsForTask( const RippleTask& task, vector<int>& logs ) {
 		throw RippleException( "No logs found. Does task exist?" );
 }
 
-RippleLog Ripple::GetLog( int log_id ) {
-	RippleLog log;
+void Ripple::GetLog( int log_id, RippleLog& log ) {
+
 	sql << "SELECT * FROM logs WHERE log_id=:log_id",
 			into( log ), use( log_id );
 
 	if ( !sql.got_data() )
 		throw RippleException( "Log not found." );
 
-	return log;
 }
 
 void Ripple::ReOpenTask( RippleTask& task, const RippleUser& requestor, const string& reason ) {
@@ -406,3 +423,4 @@ void Ripple::UpdateTask( const RippleTask& task, RippleLog& log ) {
 
 	InsertLog( log );
 }
+

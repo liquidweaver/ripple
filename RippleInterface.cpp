@@ -1,10 +1,12 @@
-#include "RippleInterface.hpp"
-#include "mongoose/mongoose.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h> //Some helper functions for the c glue
 #include <iostream>
+#include "RippleInterface.hpp"
+#include "Ripple.hpp"
+#include "mongoose/mongoose.h"
+#include "JSON.hpp"
 
 RippleInterface* RippleInterface::instance = NULL;
 pthread_rwlock_t RippleInterface::rwlock = PTHREAD_RWLOCK_INITIALIZER;
@@ -21,6 +23,48 @@ const char* RippleInterface::ajax_reply_start =
 
 const char* RippleInterface::http500 = 
   "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+
+std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
+	out << '{'
+		<< '"' << "log_id" << "\":" << log.log_id << ','
+		<< '"' << "flavor" << "\":" << log.flavor << ','
+		<< '"' << "body" <<  "\":\"" << JSON::escape( log.body ) << '"' << ','
+		<< '"' << "user_id" << "\":"  << log.user_id << ','
+		<< '"' << "task_id" << "\":" << log.task_id << ','
+		<< '"' << "created_date" << "\":\"" << JSON::rfc3339( log.created_date ) << '"'
+		<< '}';
+}
+
+std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
+	out << '{'
+		<< '"' << "task_id" << "\":" << task.task_id << ','
+		<< '"' << "stakeholder" << "\":" << task.stakeholder << ','
+		<< '"' << "start_date" << "\":\"" << JSON::rfc3339( task.start_date ) << '"'
+		<< '"' << "due_date" << "\":\"" << JSON::rfc3339( task.due_date ) << '"'
+		<< '"' << "state" << "\":"  << task.state << ','
+		<< '"' << "parent_task" << "\":" << task.parent_task;
+
+	vector<int> log_ids;
+
+	//Good thing Ripple is a singleton...
+	Ripple::Instance()->GetLogsForTask( task, log_ids );
+
+
+	if ( log_ids.size() > 0 ) {
+		out << ",logs:[";
+
+		for( vector<int>::const_iterator log_id = log_ids.begin(); log_id != log_ids.end(); ++log_id ) {
+			RippleLog log;
+			Ripple::Instance()->GetLog( *log_id, log );
+			out << log;
+			if ( log_id + 1 != log_ids.end() )
+				out << ',';
+		}
+
+		out << ']';
+	}
+	out << '}';
+}
   
 
 RippleInterface* RippleInterface::Instance( Ripple* ripple, const char** options ) {
@@ -28,6 +72,14 @@ RippleInterface* RippleInterface::Instance( Ripple* ripple, const char** options
     instance = new RippleInterface( ripple, options );
 
   return instance;
+}
+
+void RippleInterface::Release() {
+	if ( instance != NULL )
+		delete instance;
+	
+	instance = NULL;
+
 }
 
 RippleInterface::RippleInterface( Ripple* ripple, const char** options )
@@ -257,10 +309,24 @@ void RippleInterface::query( struct mg_connection *conn,
     if ( method != "" ) {
       //Stubbin'
       if ( method == "get_assigned_tasks" ) {
-       ripple->Ge 
-      }
+        vector<int> task_ids;
+        ripple->GetUsersAssignedTasks( user.user_id, task_ids, false );
 
-      throw runtime_error( string( "Unknown query method " ) + method + string( " for user " ) +  user.name );
+        if ( task_ids.size() > 0 ) {
+          ostringstream json;
+          json << '[';
+          for  ( vector<int>::const_iterator task_id = task_ids.begin(); task_id != task_ids.end(); ++task_id ) {
+            RippleTask rt;
+            ripple->GetTask( *task_id, rt );
+            json << rt;  
+          }
+          json << ']';
+        }
+        else {
+          mg_printf( conn, "%s[]", ajax_reply_start );
+         }
+       
+      }
     }
     else {
       throw runtime_error( "Invalid query." );
@@ -322,4 +388,3 @@ struct session* RippleInterface::new_session(void) {
     throw RippleInterfaceException( "No more sessions available, sorry." );
   return &sessions[i];
 }
-// vim: ts=2 sw=2 ai et

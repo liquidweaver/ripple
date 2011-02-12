@@ -22,8 +22,10 @@ struct session {
 class RippleInterface {
 	public:
 		static RippleInterface* Instance( Ripple* ripple, const char** options ); 
+		static void Release();
 
 	private:
+
 		RippleInterface( Ripple* ripple, const char** options );
 		static void * event_handler( mg_event event, mg_connection *conn, const mg_request_info *request_info);
 		int is_authorized(const struct mg_connection *conn, const struct mg_request_info* request_info );

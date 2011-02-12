@@ -34,6 +34,61 @@
 			$('#banner li').removeClass('active');
 			$(this).parent().addClass('active');
 		});
+
+		$('#new_task_btn').click( function() {
+		  //Get the A tag
+		  var id = $('#modal.window');
+
+		  //Get the screen height and width
+		  var maskHeight = $(window).height();
+		  var maskWidth = $(window).width();
+
+		  //Set height and width to mask to fill up the whole screen
+		  $('#mask').css({'width':maskWidth,'height':maskHeight});
+			
+		  //transition effect     
+		  $('#mask').show();  
+
+		  //Get the window height and width
+		  var winH = $(window).height();
+		  var winW = $(window).width();
+					
+		  //Set the popup window to center
+		  $(id).css('top',  winH/2-$(id).height()/2);
+		  $(id).css('left', winW/2-$(id).width()/2);
+
+		  //transition effect
+		  $(id).fadeIn("slow");
+
+		});
+
+		//if close button is clicked
+		$('.window .close').click(function (e) {
+		  //Cancel the link behavior
+		  e.preventDefault();
+		  $('#mask, .window').hide();
+		});     
+
+		//if mask is clicked
+		$('#mask').click(function () {
+		  $(this).hide();
+		  $('.window').hide();
+		});
+
+		$('#create_new_task_btn').click( function() {
+			ripple.query( "create_task",{ description: $("#description").val(), duedate: $("#due_date").val(), startdate: $("#start_date").val() }, function(data) { 
+				$("#create_task_results").hide();
+				if ( data.error_msg == "" ) {
+					$("#create_new_task_btn").attr('disabled', 'disabled');
+					$("#create_task_results").removeClass("error").addClass("success").html("Task created.").fadeIn("fast");
+					setTimeout( function() { $('#mask, .window').hide(); }, 2000 );
+				}
+				else {
+					$("#create_task_results").addClass("error").html(data.error_msg).fadeIn("fast");
+				}
+
+			 }, "json");
+		});
 	});
 </script>
 <body>
@@ -44,8 +99,26 @@
 			<li id="menu_accepted"><a href="#">need to do</a></li>
 			<li id="menu_stakeholder"><a href="#">need done</a></li>
 			<li id="menu_watching"><a href="#">am watching</a></li>
-		</ul><a class="logout" href="/logout">logout</a></nav>
+		</ul><input id="new_task_btn" type="button" class="new_task" value="new task" /><div id="new_task_div" class="new_task" ></div><a class="logout" href="/logout">logout</a></nav>
 	</header>
+	<div id="modal" class="window">
+	<fieldset>
+		<legend>New Task</legend>
+		<p> <label for="description">description</label>
+		<textarea id="description" title="Task description, first line is the subject" required="required" autofocus="autofocus"
+				placeholder="Please enter the task you need done. The first line is automatically the subject."
+				rows="6" cols="30"></textarea> </p>
+		<p> <label for="due_date">due by</label>
+		<input type="datetime-local" id="due_date" title="when task is due - optional" /> </p>
+		<p> <label for="start_date">starts on</label>
+		<input type="datetime-local" id="start_date" title="when to start task - optional" /> </p>
+		<p class="submit"> <input id="create_new_task_btn" type="button" value="Create Task" />
+	  <!-- close button is defined as close class -->
+	  <a href="#" class="close">Cancel</a>
+	</fieldset >
+	<div id="create_task_results" class="message"></div>
+	</div>
+	<div id="mask"></div>
 	<div id="content"></div>
 </body>
 </html>

@@ -5,10 +5,13 @@
 
 class RippleTask {
 public:
+	RippleTask()
+		: task_id( -1 ), stakeholder( -1 ), assigned( -1 ), start_date( -1 ),
+			due_date( -1 ), state( RTS_OPEN ), parent_task( -1 ) { }
+
 	RippleTask( const RippleUser& stakeholder )
 		: task_id( -1 ), stakeholder( stakeholder.user_id ), assigned( stakeholder.user_id ), start_date( -1 ),
-			due_date( -1 ), state( RTS_OPEN ), parent_task( -1 ) {
-	}
+			due_date( -1 ), state( RTS_OPEN ), parent_task( -1 ) { }
 
 	bool IsStakeHolder( const RippleUser& user ) const {
 		return user.user_id == stakeholder;

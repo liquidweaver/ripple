@@ -103,7 +103,7 @@ table {margin: .5em auto 1.5em auto; width: 98%;}
 
 #banner {
 	margin: 0 auto;
-	padding: 2.5em 0 0 0;
+	padding: 1.5em 0 0 0;
 }
 
 /* Banner */
@@ -188,7 +188,7 @@ fieldset {
 	padding:1.5em 1em 1em .5em;
 }
 
-#login fieldset {
+#modal fieldset {
 	vertical-align: middle;
 	background-color: #C74451;
 	/* background-image: url("vegress_logo_grey.png"); */
@@ -197,7 +197,7 @@ fieldset {
 	display: block;
 }
 
-#login div.container {
+#modal div.container {
 	margin-top: 10%
 	width: 100%;
 	height: 100%;
@@ -205,14 +205,14 @@ fieldset {
 	position: relative;
 }
 
-#login div.inner {
+#modal div.inner {
 	position: absolute;
 	left: 30%;
 	top: 25%;
 	width: 25em;
 }
 
-#login label {
+#modal label {
   float:left;
   margin-right:0.5em;
   padding-top:0.2em;
@@ -222,7 +222,7 @@ fieldset {
   font-weight:bold;
 }
 
-#login legend {
+#modal legend {
 	font-weight: bold;
 	font-size: 1.4em;
 	color: white;
@@ -237,12 +237,12 @@ fieldset p {
 	margin-bottom: .5em;
 }
 
-#login p.submit {
+#modal p.submit {
 	margin-left: 5.5em;
 	position: relative;
 }
 
-#login p.submit a {
+#modal p.submit a {
 	position: absolute;
 	bottom: 0;
 	right: .5em;
@@ -270,7 +270,7 @@ input[type="button"]:hover {
 	color: black;
 }
 
-input[type="text"],input[type="password"],input[type="email"],input[type="file"]  {
+input[type="text"],input[type="password"],input[type="email"],input[type="file"],input[type="datetime-local"]  {
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
@@ -279,6 +279,7 @@ input[type="text"],input[type="password"],input[type="email"],input[type="file"]
 	background-color: white;
 	border:0;
 	padding: .25em .5em .25em .5em;
+	font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
 div.message {
@@ -288,7 +289,7 @@ div.message {
 	background-color: grey;
 	color: black;
 	padding: .25em .5em .25em .5em;
-	display: inline-block;
+	display: none;
 }
 
 div.success {
@@ -315,4 +316,53 @@ div.error {
 
 span.task_stakeholder {
 	font-weight: bold;
+}
+
+input[type="button"].new_task {
+	border-top-left-radius: 0;
+	-moz-border-radius-topleft: 0;
+	-webkit-border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	-moz-border-radius-topright: 0;
+	-webkit-border-top-right-radius: 0;
+	background-color: #C74451;
+	border: 2px solid black;
+	color: black;
+	position: absolute;
+	left:1em;
+	height: 30px;
+	bottom:-28px;
+}
+input[type="button"].new_task:hover {
+	text-shadow: 1px 1px 1px #333;
+	color:white;
+}
+
+#mask {
+  position:fixed;
+  top:0;
+  left:0;
+  height:100%;
+  width:100%;
+  z-index:9000;
+  background-color:#000;
+  display:none;
+  opacity: .85;
+}
+   
+#modal.window {
+  position:absolute;
+  display:none;
+  z-index:9999;
+}
+
+#description {
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+	color:black;
+	font-size:.9em;
+	background-color: white;
+	border:0;
 }

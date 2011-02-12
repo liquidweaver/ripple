@@ -17,7 +17,10 @@ ripple.change_view = function( page ) {
 			ripple.load_all_assigned_tasks();	
 			break;
 		case 'accepted':
+			break;
 		case 'stakeholder':
+			var new_task_btn = $('<input type="button" value="New task" />').addClass('new_task').after('tasks');
+			break;
 		default:
 			alert( 'Error: view not found.' );
 	}

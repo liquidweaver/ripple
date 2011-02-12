@@ -28,8 +28,8 @@ static const char *options[] = {
 using namespace std;
 
 int main( int argc, char* argv[] ) {
-  auto_ptr<Ripple> ripple( new Ripple() );
-  auto_ptr<RippleInterface> ri( RippleInterface::Instance( ripple.get(), options ) );
+  Ripple* ripple = Ripple::Instance();
+  RippleInterface* ri = RippleInterface::Instance( ripple, options );
 
   cout << "Press any key to stop..." << endl;
   cin.get();
