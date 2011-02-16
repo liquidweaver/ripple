@@ -1,368 +1,66 @@
 /* Reset layouts to sane values */
 @import url("reset.css");
-
-/***** Global *****/
-/* Body */
-	body {
-		background: #F5F4EF;
-		background-image: url('lorenz.jpg');
-		background-repeat: no-repeat;
-		background-position: 30% 30%;
-		background-attachment: fixed;
-		color: #000305;
-		font-size: 87.5%; /* Base font size: 14px */
-		font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-		line-height: 1.429;
-		margin: 0;
-		padding: 0;
-		text-align: left;
-	}
-
-/* Headings */
-h2 {font-size: 1.571em}	/* 22px */
-h3 {font-size: 1.429em}	/* 20px */
-h4 {font-size: 1.286em}	/* 18px */
-h5 {font-size: 1.143em}	/* 16px */
-h6 {font-size: 1em}	/* 14px */
-
-h2, h3, h4, h5, h6 {
-	font-weight: 400;
-	line-height: 1.1;
-	margin-bottom: .8em;
-}
-
-/* Anchors */
-a {outline: 0;}
-a img {border: 0px; text-decoration: none;}
-a:link, a:visited {
-	color: #C74350;
-	padding: 0 1px;
-	text-decoration: underline;
-}
-a:hover {
-	color: #fff;
-	text-decoration: none;
-	text-shadow: 1px 1px 1px white;
-}
-
-
-/* Paragraphs */
-p {margin-bottom: 1.143em;}
-* p:last-child {margin-bottom: 0;}
-
-strong, b {font-weight: bold;}
-em, i {font-style: italic;}
-
-::-moz-selection {background: #F6CF74; color: #fff;}
-::selection {background: #F6CF74; color: #fff;}
-
-/* Lists */
-ul {
-	list-style: outside disc;
-	margin: 1em 0 1.5em 1.5em;
-}
-
-ol {
-	list-style: outside decimal;
-	margin: 1em 0 1.5em 1.5em;
-}
-
-dl {margin: 0 0 1.5em 0;}
-dt {font-weight: bold;}
-dd {margin-left: 1.5em;}
-
-/* Quotes */
-blockquote {font-style: italic;}
-cite {}
-
-q {}
-
-/* Tables */
-table {margin: .5em auto 1.5em auto; width: 98%;}
-
-	/* Thead */
-	thead th {padding: .5em .4em; text-align: left;}
-	thead td {}
-
-	/* Tbody */
-	tbody td {padding: .5em .4em;}
-	tbody th {}
-
-	tbody .alt td {}
-	tbody .alt th {}
-
-	/* Tfoot */
-	tfoot th {}
-	tfoot td {}
-
-/*
-
-    Header
-
-*****************/
-
-#banner {
-	margin: 0 auto;
-	padding: 1.5em 0 0 0;
-}
-
-/* Banner */
-#banner h1 {font-size: 3.571em; line-height: .6;}
-#banner h1 a:link, #banner h1 a:visited {
-	color: #000305;
-	display: block;
-	font-weight: bold;
-	margin: 0 0 .6em .2em;
-	text-decoration: none;
-}
-
-/* Main Nav */
-#banner nav {
-	background: #000305;
-	font-size: 1.143em;
-	height: 40px;
-	line-height: 30px;
-	margin: 0 2em 2em 2em;
+html, body {
+	margin: 0;
 	padding: 0;
-	text-align: center;
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	position: relative;
+	height: 100%;
+	width: 100%;
+	font-family: "Trebuchet", "Arial", "Helvetica", "Verdana", "sans-serif";
+	font-size: 16px;
 }
-#banner nav ul {list-style: none; margin: 0 auto;}
-#banner nav li {float: left; display: inline; margin: 0;}
-#banner nav a:link, #banner nav a:visited {
-	color: #fff;
-	display: inline-block;
-	/* height: 30px; */
-	padding: 5px 1.5em;
-	text-decoration: none;
-}
-#banner nav .active a:link, #banner nav .active a:visited {
-	background-color: #C74451;
-	color: #fff;
-	text-shadow: 1px 1px 1px #333;
+body {
+	background-color: white;
+	background-image: url('lorenz.jpg');
+	background-repeat: no-repeat;
+	background-position:20% 40%;
 }
 
 a.logout {
-	color:#C74451 !important;	
+	text-decoration: none;
+	color:#222222;	
 	background-image: url("logout.png") !important;
-	background-position: 85% 55% !important;
-	background-repeat: no-repeat !important;
-	background-color: #000305 !important;
+	background-position: 95% 45%;
+	background-repeat: no-repeat;
 	font-weight: bold;
-	position: absolute;
-	right: 1em;
-	text-shadow: 1px 1px 1px black !important;
+	padding-right: 1em;
+	text-shadow: 1px 1px 1px #666666;
+	margin-left: 1em;
 }
-
 a.logout:hover {
 	text-shadow: 1px 1px 1px white !important;
 }
 
-span.stuff {
-	color:#C74451;	
-	display: inline-block;
-	padding: 5px 1.5em;
-}
-
-#banner nav li:first-child a {
-	border-top-left-radius: 5px;
-	-moz-border-radius-topleft: 5px;
-	-webkit-border-top-left-radius: 5px;
-
-	border-bottom-left-radius: 5px;
-	-moz-border-radius-bottomleft: 5px;
-	-webkit-border-bottom-left-radius: 5px;
-	padding: 3px 1em;
-}
-
-fieldset {
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	text-align:left;
-	border: 2px solid #C74350;
-	margin:0 1.5em 1.5em 0;
-	padding:1.5em 1em 1em .5em;
-}
-
-#modal fieldset {
-	vertical-align: middle;
-	background-color: #C74451;
-	/* background-image: url("vegress_logo_grey.png"); */
+a.create_task {
+	color:#222222;	
+	background-image: url("create_task.png") !important;
+	background-position: 100% 85%;
 	background-repeat: no-repeat;
-	background-position: 5% 90%;
-	display: block;
-}
-
-#modal div.container {
-	margin-top: 10%
-	width: 100%;
-	height: 100%;
-	text-align: center;
-	position: relative;
-}
-
-#modal div.inner {
-	position: absolute;
-	left: 30%;
-	top: 25%;
-	width: 25em;
-}
-
-#modal label {
-  float:left;
-  margin-right:0.5em;
-  padding-top:0.2em;
-  display:block;
-  width:5em;
-  text-align:right;
-  font-weight:bold;
-}
-
-#modal legend {
-	font-weight: bold;
-	font-size: 1.4em;
-	color: white;
-	background-color: black;
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	padding: .25em .25em .25em .25em;
-}
-
-fieldset p {
-	margin-bottom: .5em;
-}
-
-#modal p.submit {
-	margin-left: 5.5em;
-	position: relative;
-}
-
-#modal p.submit a {
-	position: absolute;
-	bottom: 0;
-	right: .5em;
-	color:black;
-	vertical-align: bottom;
-}
-
-input[type="submit"],
-input[type="button"] {
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	color:white;
-	border:0;
-	font-size:.9em;
+	text-decoration: none;
 	font-weight:bold;
-	background-color: black;
-	height: 2em;
+	padding-right: 2em;
+	text-shadow: 1px 1px 1px #666666;
+	border-right: 1px solid black;
+}
+a.create_task:hover {
+	text-shadow: 1px 1px 1px white !important;
 }
 
-input[type="submit"]:hover,
-input[type="button"]:hover {
-	text-shadow: 1px 1px 1px #333;
-	background-color: white;
-	color: black;
+div.main {
+	margin: 1em;
 }
 
-input[type="text"],input[type="password"],input[type="email"],input[type="file"],input[type="datetime-local"]  {
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	color:black;
-	font-size:.9em;
-	background-color: white;
-	border:0;
-	padding: .25em .5em .25em .5em;
-	font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-}
-
-div.message {
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	background-color: grey;
-	color: black;
-	padding: .25em .5em .25em .5em;
-	display: none;
-}
-
-div.success {
-	background-color: LightGreen !important;
-}
-
-div.error {
-	background-image: url("error.png") !important;
-	background-position: .5em 50% !important;
-	background-repeat: no-repeat !important;
-	padding: 1em 1em .5em 3.5em;
-	min-height: 3em;
-	vertical-align: middle;
-	font-weight: bold;
-}
-
-.validate_error { 
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	background-color: black;
-	color:white;
-}
-
-span.task_stakeholder {
-	font-weight: bold;
-}
-
-input[type="button"].new_task {
-	border-top-left-radius: 0;
-	-moz-border-radius-topleft: 0;
-	-webkit-border-top-left-radius: 0;
-	border-top-right-radius: 0;
-	-moz-border-radius-topright: 0;
-	-webkit-border-top-right-radius: 0;
-	background-color: #C74451;
-	border: 2px solid black;
-	color: black;
+div.right_nav {
 	position: absolute;
-	left:1em;
-	height: 30px;
-	bottom:-28px;
-}
-input[type="button"].new_task:hover {
-	text-shadow: 1px 1px 1px #333;
-	color:white;
+	top:.75em;
+	right: 1em;
 }
 
-#mask {
-  position:fixed;
-  top:0;
-  left:0;
-  height:100%;
-  width:100%;
-  z-index:9000;
-  background-color:#000;
-  display:none;
-  opacity: .85;
-}
-   
-#modal.window {
-  position:absolute;
-  display:none;
-  z-index:9999;
+fieldset label {
+	display: inline-block;
+	width: 6em;
 }
 
-#description {
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	font-family: 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-	color:black;
-	font-size:.9em;
-	background-color: white;
-	border:0;
+input[type="text"], input[type="email"], input[type="password"], input[type="datetime-local"] {
+	margin-bottom:.5em;
+	margin-top:.5em;
 }

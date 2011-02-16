@@ -1,0 +1,45 @@
+@import url("reset.css");
+@import url("ripple.css");
+#login form{
+	margin-left:8px;
+	padding:16px 16px 40px 16px;
+	position: relative;
+}
+
+#login form p {
+	margin-bottom:0;
+}
+
+label {
+	width:5em;
+	display:inline-block;
+	text-align: right;
+}
+
+form .submit,.alignright{
+	float:right;
+}
+
+#login{
+	width:400px;
+	margin:10% 40% auto auto;
+}
+
+#login fieldset {
+	width: 350px;
+}
+
+#login_btn {
+	padding: .25em;
+}
+
+#login a {
+	position:absolute;
+	bottom: 1em;
+}
+
+#signup_link {
+	position:absolute;
+	left: 1em;
+	bottom: .5em;
+}

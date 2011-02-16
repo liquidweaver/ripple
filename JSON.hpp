@@ -1,18 +1,24 @@
 #ifndef JSON_HPP
 #define JSON_HPP
 #include <string>
+#include <iostream>
+#include <iomanip>
 
 class JSON {
 public:
 		static std::string escape( std::string raw_string ) {
-			const string quote( "\"" );
-			const string escaped_quote( "\\\"" );
+			const string need_to_escape( "\"\\" );
+			stringstream quoted_string;
 
-			size_t pos = raw_string.find(quote);
-			while( pos != string::npos ) 
-				raw_string.replace( pos, quote.size(), escaped_quote );
+			for ( string::const_iterator achar = raw_string.begin();
+					achar != raw_string.end(); ++achar ) {
+				if ( *achar == '\"' || *achar == '\\' || iscntrl( *achar ) )
+					quoted_string << "\\u00" << hex << setw(2) << setfill( '0' ) << static_cast<unsigned int>( *achar );
+				else
+					quoted_string << *achar;
+			}
 
-			return raw_string;
+			return quoted_string.str();
 		}
 	
 		static std::string rfc3339( time_t timestamp ) {

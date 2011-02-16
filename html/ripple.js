@@ -13,13 +13,11 @@ ripple.change_view = function( page ) {
 
 	switch( page ) {
 		case 'watching':
-		case 'assigned':
-			ripple.load_all_assigned_tasks();	
 			break;
-		case 'accepted':
+		case 'assigned':
 			break;
 		case 'stakeholder':
-			var new_task_btn = $('<input type="button" value="New task" />').addClass('new_task').after('tasks');
+			ripple.load_all_assigned_tasks();	
 			break;
 		default:
 			alert( 'Error: view not found.' );
@@ -29,12 +27,19 @@ ripple.change_view = function( page ) {
 ripple.query = function( method, args, callback ) {
 	
 	args.method = method;
-	$.post( '/ajax/query', args, callback, 'json' );  
+	//$.post( '/ajax/query', args, callback, 'json' );  
+	$.ajax({
+		type: 'POST',
+		url: '/ajax/query',
+		data: args,
+		success: callback,
+		dataType: 'json'
+	});
 };
 
 ripple.load_all_assigned_tasks = function() {
-	ripple.query( 'get_assigned_tasks', {}, function( tasks ) {
-		$.each( tasks, function( index, task ) { 
+	ripple.query( 'get_assigned_tasks', {}, function( data ) {
+		$.each( data, function( index, task ) { 
 			ripple.add_task( task );
 		}); 
 	});
@@ -60,7 +65,7 @@ ripple.add_task = function( task_data ) {
 	}
 
 	$.each( task_data.logs, function( index, log ) {
-		var log_entry = ('<div>').appendTo( task );
+		var log_entry = $('<div>').appendTo( task );
 
 		if ( index == 0 )
 			log_entry.addClass('task_description')

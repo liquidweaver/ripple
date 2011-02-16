@@ -29,6 +29,7 @@ std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
 		<< '"' << "log_id" << "\":" << log.log_id << ','
 		<< '"' << "flavor" << "\":" << log.flavor << ','
 		<< '"' << "body" <<  "\":\"" << JSON::escape( log.body ) << '"' << ','
+		<< '"' << "subject" <<  "\":\"" << JSON::escape( log.Subject() ) << '"' << ','
 		<< '"' << "user_id" << "\":"  << log.user_id << ','
 		<< '"' << "task_id" << "\":" << log.task_id << ','
 		<< '"' << "created_date" << "\":\"" << JSON::rfc3339( log.created_date ) << '"'
@@ -36,13 +37,30 @@ std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
 }
 
 std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
+
 	out << '{'
 		<< '"' << "task_id" << "\":" << task.task_id << ','
 		<< '"' << "stakeholder" << "\":" << task.stakeholder << ','
-		<< '"' << "start_date" << "\":\"" << JSON::rfc3339( task.start_date ) << '"'
-		<< '"' << "due_date" << "\":\"" << JSON::rfc3339( task.due_date ) << '"'
+		<< '"' << "start_date" << "\":\"" << JSON::rfc3339( task.start_date ) << "\","
+		<< '"' << "due_date" << "\":\"" << JSON::rfc3339( task.due_date ) << "\","
 		<< '"' << "state" << "\":"  << task.state << ','
 		<< '"' << "parent_task" << "\":" << task.parent_task;
+		
+	try { 
+		RippleUser stakeholder;
+		Ripple::Instance()->GetUser( task.stakeholder, stakeholder );
+		out << ",\"" << "stakeholder_name\":\"" << JSON::escape( stakeholder.name ) << "\"";
+	}
+	catch ( ... ) { }
+
+	try { 
+		RippleUser assigned;
+		Ripple::Instance()->GetUser( task.assigned, assigned );
+		out << ",\"" << "assigned_name\":\"" << JSON::escape( assigned.name ) << "\"";
+	}
+	catch ( ... ) { }
+
+
 
 	vector<int> log_ids;
 
@@ -51,7 +69,7 @@ std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
 
 
 	if ( log_ids.size() > 0 ) {
-		out << ",logs:[";
+		out << ",\"logs\":[";
 
 		for( vector<int>::const_iterator log_id = log_ids.begin(); log_id != log_ids.end(); ++log_id ) {
 			RippleLog log;
@@ -296,7 +314,7 @@ void RippleInterface::signup( struct mg_connection *conn,
     error_msg = e.what();
   }
 
-  mg_printf( conn, "%s{ \"error_msg\": \"%s\" }", ajax_reply_start, error_msg.c_str() );
+  mg_printf( conn, "%s{ \"error_msg\": \"%s\", \"name\":\"%s\" }", ajax_reply_start, error_msg.c_str(), name.c_str() );
 
 }
 void RippleInterface::query( struct mg_connection *conn,
@@ -307,7 +325,24 @@ void RippleInterface::query( struct mg_connection *conn,
 
   try {
     if ( method != "" ) {
-      //Stubbin'
+	 	if ( method == "create_task" ) {
+			string description = get_post_var( post_data, "description" );
+			string start_date = get_post_var( post_data, "start_date" );
+			string due_date = get_post_var( post_data, "due_date" );
+			cout << "New task - start_date: " << start_date
+					<< " due_date: " << due_date
+					<< " description: " << description << endl;
+			time_t t_start_date = start_date == "" ? -1 : atoi( start_date.c_str() );
+			time_t t_due_date = due_date == "" ? -1 : atoi( due_date.c_str() );
+			try {
+				ripple->CreateTask( user, description, t_start_date, t_due_date ); 
+
+				mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
+			}
+			catch ( exception& e ) {
+				mg_printf( conn, "%s{ \"error_msg\":\"%s\" }", ajax_reply_start, e.what() );
+			}
+		}
       if ( method == "get_assigned_tasks" ) {
         vector<int> task_ids;
         ripple->GetUsersAssignedTasks( user.user_id, task_ids, false );
@@ -319,8 +354,12 @@ void RippleInterface::query( struct mg_connection *conn,
             RippleTask rt;
             ripple->GetTask( *task_id, rt );
             json << rt;  
+				 if ( task_id + 1 != task_ids.end() )
+					json << ',';
           }
           json << ']';
+
+			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
         }
         else {
           mg_printf( conn, "%s[]", ajax_reply_start );

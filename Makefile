@@ -12,7 +12,7 @@ tests/ripple_tests: tests/ripple_tests.cpp Ripple.o tests/ripple.db
 Ripple.o: Ripple.cpp Ripple.hpp RippleTask.hpp RippleUser.hpp RippleLog.hpp
 	g++ -g -c Ripple.cpp -I/usr/local/include/soci 
 
-RippleInterface.o: RippleInterface.hpp RippleInterface.cpp 
+RippleInterface.o: RippleInterface.hpp JSON.hpp RippleInterface.cpp 
 	g++ -g -c RippleInterface.cpp 
 
 mongoose.o: mongoose/mongoose.c
