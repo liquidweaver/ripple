@@ -22,6 +22,8 @@ public:
 		}
 	
 		static std::string rfc3339( time_t timestamp ) {
+			if ( timestamp == -1 )
+				return string();
 			struct tm * timeinfo;
 			char buffer [80];
 

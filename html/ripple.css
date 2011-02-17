@@ -5,7 +5,7 @@ html, body {
 	padding: 0;
 	height: 100%;
 	width: 100%;
-	font-family: "Trebuchet", "Arial", "Helvetica", "Verdana", "sans-serif";
+	font-family: 'Trebuchet MS', Trebuchet, Tahoma, Verdana, Arial, sans-serif;
 	font-size: 16px;
 }
 body {
@@ -63,4 +63,53 @@ fieldset label {
 input[type="text"], input[type="email"], input[type="password"], input[type="datetime-local"] {
 	margin-bottom:.5em;
 	margin-top:.5em;
+}
+
+#tasks {
+	vertical-align: top;
+}
+
+div.task {
+	float: left;
+	width: 20em;
+	margin: 1em;
+	padding: 1em;
+	word-break: break-all;
+}
+
+p.log_subject.log_flavor_0 {
+	font-size: 1.2em;
+	font-weight: bold;
+	text-shadow: 1px 1px 1px #666666;
+	display: block;
+
+}
+
+div.task_info {
+	float: left;
+	margin-right: .5em;
+	padding: .5em;
+	font-weight: bold;
+}
+
+img.avatar {
+	float: left;
+	margin-right: .5em;
+	margin-bottom: .5em;
+}
+
+img.action_img {
+	margin: .25em;
+}
+
+div.stakeholder {
+	word-break: normal;
+}
+
+div.task_time {
+	clear: both;
+}
+
+hr.task_info {
+	border: 1px solid;
 }

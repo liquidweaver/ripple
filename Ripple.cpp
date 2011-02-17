@@ -99,8 +99,8 @@ void Ripple::DeleteUser( int user_id ) {
 		throw RippleException( "User not found." );
 }
 
-RippleTask Ripple::CreateTask( const RippleUser& ru, const string& subject_and_body, std::time_t start, std::time_t due ) {
-	if ( subject_and_body == "" )
+RippleTask Ripple::CreateTask( const RippleUser& ru, const string& description, std::time_t start, std::time_t due ) {
+	if ( description == "" )
 		throw RippleException( "You must enter a description when creating a task." );
 
 	RippleTask rt( ru );
@@ -108,7 +108,7 @@ RippleTask Ripple::CreateTask( const RippleUser& ru, const string& subject_and_b
 	rt.due_date = due;
 	InsertTask( rt );
 
-	RippleLog rl( ru, rt, RLF_CREATED, subject_and_body );
+	RippleLog rl( ru, rt, RLF_CREATED, description );
 	InsertLog( rl );
 
 	return rt;
@@ -252,14 +252,14 @@ void Ripple::CompleteTask( RippleTask& task, const RippleUser& requestor, string
 	UpdateTask( task, log );
 }
 
-void Ripple::AddNoteToTask( const RippleTask& task, const RippleUser& requestor, const string& body ) {
+void Ripple::AddNoteToTask( const RippleTask& task, const RippleUser& requestor, const string& description ) {
 	string cannot = CheckAction( task, requestor, RLF_NOTE );
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
-	if ( body == "" )
+	if ( description == "" )
 		throw RippleException( "Note must have some content." );
-	RippleLog log( requestor, task, RLF_NOTE, body );
+	RippleLog log( requestor, task, RLF_NOTE, description );
 	InsertLog( log );
 }
 
@@ -279,7 +279,8 @@ string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor,
 		return string( "You are neither assigned or the stakeholder of this task." );
 
 	switch( flavor ) {
-		case RLF_CREATED: //Always allowed
+		case RLF_CREATED: //Never allowed; task already exists
+			return string( "Task already exists." );
 			break;
 		case RLF_NOTE:
 			if ( !task.IsStakeHolder( requestor ) && ( task.state != RTS_ACCEPTED || task.state != RTS_STARTED ) )
@@ -406,7 +407,7 @@ void Ripple::InsertTask( RippleTask& task ) {
 void Ripple::InsertLog( RippleLog& log ) {
 
 	sql << "INSERT INTO logs VALUES("
-		<< ":log_id, :flavor, :body, :user_id, :task_id,"
+		<< ":log_id, :flavor, :description, :user_id, :task_id,"
 		<< ":created_date)",
 		use( static_cast<const RippleLog&>( log ) );
 

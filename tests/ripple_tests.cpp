@@ -48,14 +48,20 @@ BOOST_AUTO_TEST_CASE( task_creation ) {
 	RippleLog log;
 	ripple->GetLog( logs[0], log );
 	BOOST_CHECK_EQUAL( log.Subject(), "This is a test task" );
+	BOOST_CHECK_EQUAL( log.Body(), "Omg sweetness" );
 
 	//Make sure time is reasonably accurate...5 seconds is a crazy amount of error margin
 	//It should essentially be time(NULL)
 	BOOST_CHECK_LT( time( NULL ) - log.created_date, 5 );
 
 	ripple->GetLog( logs[1], log );
-	BOOST_CHECK_EQUAL( log.body, "I need you to do this." );
+	BOOST_CHECK_EQUAL( log.description, "I need you to do this." );
 	BOOST_CHECK_EQUAL( log.Subject(), "I need you to do this." );
+
+	RippleLog rl_long_subject;
+	rl_long_subject.description = "This is a test task with a really looooooooooooong subject";
+	BOOST_CHECK_EQUAL( rl_long_subject.Subject(), "This is a test task with a really" );
+	BOOST_CHECK_EQUAL( rl_long_subject.Body(), "looooooooooooong subject" );
 
 	Ripple::Release();
 }

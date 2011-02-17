@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h> //Some helper functions for the c glue
+#include <sstream>
 #include <iostream>
 #include "RippleInterface.hpp"
 #include "Ripple.hpp"
@@ -28,12 +29,14 @@ std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
 	out << '{'
 		<< '"' << "log_id" << "\":" << log.log_id << ','
 		<< '"' << "flavor" << "\":" << log.flavor << ','
-		<< '"' << "body" <<  "\":\"" << JSON::escape( log.body ) << '"' << ','
+		<< '"' << "body" <<  "\":\"" << JSON::escape( log.Body() ) << '"' << ','
 		<< '"' << "subject" <<  "\":\"" << JSON::escape( log.Subject() ) << '"' << ','
 		<< '"' << "user_id" << "\":"  << log.user_id << ','
 		<< '"' << "task_id" << "\":" << log.task_id << ','
 		<< '"' << "created_date" << "\":\"" << JSON::rfc3339( log.created_date ) << '"'
 		<< '}';
+
+	return out;
 }
 
 std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
@@ -60,8 +63,6 @@ std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
 	}
 	catch ( ... ) { }
 
-
-
 	vector<int> log_ids;
 
 	//Good thing Ripple is a singleton...
@@ -82,6 +83,8 @@ std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
 		out << ']';
 	}
 	out << '}';
+
+	return out;
 }
   
 
@@ -348,18 +351,35 @@ void RippleInterface::query( struct mg_connection *conn,
         ripple->GetUsersAssignedTasks( user.user_id, task_ids, false );
 
         if ( task_ids.size() > 0 ) {
-          ostringstream json;
+          stringstream json;
           json << '[';
           for  ( vector<int>::const_iterator task_id = task_ids.begin(); task_id != task_ids.end(); ++task_id ) {
-            RippleTask rt;
-            ripple->GetTask( *task_id, rt );
-            json << rt;  
-				 if ( task_id + 1 != task_ids.end() )
-					json << ',';
-          }
-          json << ']';
+				 RippleTask rt;
+				 ripple->GetTask( *task_id, rt );
 
-			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+				 json << "{\"possible_actions\":[";
+
+				 map<RIPPLE_LOG_FLAVOR, string> actions;
+				 ripple->GetPossibleActions( rt, user, actions );
+				 bool first = true;
+				 for( map<RIPPLE_LOG_FLAVOR, string>::const_iterator action = actions.begin();
+						 action != actions.end(); ++action ) {
+					 if ( action->second == "" ) {
+						 if ( first ) 
+							 first = false;
+						 else
+							 json << ',';
+						 json << action->first;
+					 }
+				 }
+
+				 json << "], \"task_data\":" << rt << "}";  
+				 if ( task_id + 1 != task_ids.end() )
+					 json << ',';
+				 }
+				 json << ']';
+
+				 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
         }
         else {
           mg_printf( conn, "%s[]", ajax_reply_start );
