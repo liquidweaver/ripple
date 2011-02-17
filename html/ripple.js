@@ -70,7 +70,6 @@ ripple.add_task = function( actions, task_data ) {
 		.draggable()
 		.appendTo('#tasks');
 	var taskInfo = $('<div class="task_info ui-widget-header">').prependTo( task );
-	console.log( task_data );
 	$('<img src="anonymous.png" class="avatar" />').prependTo( taskInfo );
 	$('<div>')
 		.addClass( "stakeholder" )
@@ -142,7 +141,7 @@ ripple.pretty_datetime = function( datum ) {
 	else {
 		date_string = datum.getMonth() + '/' + datum.getDate();	
 		if ( datum.getFullYear() != today.getFullYear() )
-			asString += '/' + datum.getFullYear()
+			date_string  += '/' + datum.getFullYear()
 	}
 
 	if ( !( datum.getHours() == 0 && datum.getSeconds() == 0 ) ) { 
