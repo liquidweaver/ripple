@@ -4,6 +4,8 @@
 #include "RippleDefines.hpp"
 #include <time.h>
 
+#define MAX_SUBJECT_LENGTH 30
+
 class RippleLog {
 public:
 	RippleLog( const RippleUser& creator, const RippleTask& task, RIPPLE_LOG_FLAVOR flavor, const string& description ) 
@@ -45,10 +47,11 @@ public:
 private:
 	size_t EndOfSubject() const {
 		size_t pos = description.find_first_of( "\r\n" );
-		if ( description.size() > 40 || ( pos != string::npos && pos > 39 ) ) {
-			size_t alt_pos = description.find_last_of( " \r\n", 39 );
+		if ( 	( pos == string::npos && description.size() > MAX_SUBJECT_LENGTH ) 
+				|| ( pos != string::npos && pos > MAX_SUBJECT_LENGTH - 1 ) ) {
+			size_t alt_pos = description.find_last_of( " \r\n", MAX_SUBJECT_LENGTH - 1 );
 			
-			return alt_pos == string::npos ? 39 : alt_pos;
+			return alt_pos == string::npos ? MAX_SUBJECT_LENGTH - 1 : alt_pos;
 		}
 
 		return pos;

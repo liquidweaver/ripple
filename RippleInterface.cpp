@@ -44,6 +44,7 @@ std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
 	out << '{'
 		<< '"' << "task_id" << "\":" << task.task_id << ','
 		<< '"' << "stakeholder" << "\":" << task.stakeholder << ','
+		<< '"' << "assigned" << "\":" << task.assigned << ','
 		<< '"' << "start_date" << "\":\"" << JSON::rfc3339( task.start_date ) << "\","
 		<< '"' << "due_date" << "\":\"" << JSON::rfc3339( task.due_date ) << "\","
 		<< '"' << "state" << "\":"  << task.state << ','
@@ -280,12 +281,19 @@ void RippleInterface::authorize( mg_connection *conn,
     //   4. redirect client back to the original URL
     snprintf(session->random, sizeof(session->random), "%d", rand());
     generate_session_id(session->session_id, session->random, session->user_id );
+	 char emailbuf[256], namebuf[256];
+	 url_encode( ru.email.c_str(), emailbuf, 256);
+	 url_encode( ru.name.c_str(), namebuf, 256);
+	 
     mg_printf(conn, "HTTP/1.1 200 OK\r\n"
                     "Cache: no-cache\r\n"
                     "Set-Cookie: session=%s; max-age=3600; http-only\r\n"  // Session ID
+                    "Set-Cookie: user_id=%d; max-age=3600; http-only\r\n"  // user_id 
+                    "Set-Cookie: email=%s; max-age=3600; http-only\r\n"  // user_id 
+                    "Set-Cookie: name=%s; max-age=3600; http-only\r\n"  // user_id 
                     "Set-Cookie: original_url=/; max-age=0\r\n"  // Delete original_url
                     "Content-Type: application/json\r\n\r\n{ \"error_msg\": \"\" }",
-                    session->session_id);
+                    session->session_id, ru.user_id, emailbuf, namebuf );
   }
   catch ( RippleException& e ) {
     // Authentication failure, redirect to login.
@@ -328,6 +336,9 @@ void RippleInterface::query( struct mg_connection *conn,
 
   try {
     if ( method != "" ) {
+	 	if ( method == "update_info" ) {
+		
+		}
 	 	if ( method == "create_task" ) {
 			string description = get_post_var( post_data, "description" );
 			string start_date = get_post_var( post_data, "start_date" );

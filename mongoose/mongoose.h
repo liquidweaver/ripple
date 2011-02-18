@@ -213,6 +213,7 @@ const char *mg_version(void);
 void mg_md5(char *buf, ...);
 
 
+void url_encode(const char *src, char *dst, size_t dst_len);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

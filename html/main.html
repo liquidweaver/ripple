@@ -12,8 +12,10 @@
 	<!--[if lt IE 7]>
 		 <link rel="stylesheet" type="text/css" media="all" href="css/ie6.css"/><![endif]-->
 	<script type="text/javascript" src="js/jquery-1.5.min.js"></script>
+	<script type="text/javascript" src="js/jquery.cookie.js"></script>
 	<script type="text/javascript" src="js/jquery-ui-1.8.9.custom.min.js"></script>
 	<script type="text/javascript" src="timepicker.js"></script>
+	<script type="text/javascript" src="js/ajaxupload.js"></script>
 	<script type="text/javascript" src="ripple.js"></script>
 	<script type="text/javascript">
 		$( function() {
@@ -65,6 +67,11 @@
 			$("#create_task_start_date").datetimepicker({ ampm: true });
 			$("#create_task_due_date").datetimepicker({ ampm: true } );
 			$("#create_task_btn").button();
+			$("#assigned_tasks").sortable().disableSelection();
+			$("#stakeholder_tasks").sortable().disableSelection();
+			$("#email_btn").button();
+			$("#name_btn").button();
+			$("#avatar_btn").button();
 		});
 	</script>
 </head>
@@ -72,22 +79,37 @@
 <div class="main">
 	<nav>
 		<ul>
-			<li><a href="#assigned">Assigned</a></li>
-			<li><a href="#stakeholder">Stakeholder</a></li>
-			<li><a href="#watching">Watching</a></li>
+			<li><a href="#tasks">Tasks</a></li>
+			<li><a href="#profile">My Profile</a></li>
 		</ul>
 		<div class="right_nav">
 			<a class="create_task" id="create_task_anchor" href="#">create new task</a>
 			<a class="logout" href="/logout">logout</a>
 		</div>
-		<div id="assigned"> 
+		<div id="tasks" class="tasks"> 
 		</div>
-		<div id="stakeholder"> 
-		</div>
-		<div id="watching"> blah
+		<div id="profile"> 
+			<form method="post" enctype="multipart/form-data">
+			<fieldset>
+			<legend>your name</legend>
+				<input type="text" id="name" value="" />
+				<input id="name_btn" type="button" value="change" />
+			</fieldset>
+			<fieldset>
+			<legend>your email</legend>
+				<input type="email" id="email" value="" />
+				<input id="email_btn" type="button" value="change" />
+			</fieldset>
+			<fieldset>
+			<legend>your avatar</legend>
+				<input type="file" id="email" /><br />
+				<input id="avatar_btn" type="submit" value="change" />
+			</fieldset>
+			</form>
 		</div>
 	</nav>
-	<div id="tasks"></div>
+	<fieldset id="assigned_tasks" class="task_region shadow ui-corner-all"></fieldset>
+	<fieldset id="stakeholder_tasks" class="task_region shadow ui-corner-all"></fieldset>
 </div>
 <div class="ui-helper-hidden" id="create_task_dialog" title="Create a Task">
 <form id="create_task_form">

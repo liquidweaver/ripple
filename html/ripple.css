@@ -60,6 +60,11 @@ fieldset label {
 	width: 6em;
 }
 
+legend {
+	font-weight: bold;
+	text-shadow: 1px 1px 1px #666666;
+}
+
 input[type="text"], input[type="email"], input[type="password"], input[type="datetime-local"] {
 	margin-bottom:.5em;
 	margin-top:.5em;
@@ -69,12 +74,22 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
 	vertical-align: top;
 }
 
+
 div.task {
 	float: left;
-	width: 20em;
+	width: 18em;
+	height: 12em;
 	margin: 1em;
-	padding: 1em;
+	padding: 1em 1em 1em  2em;
 	word-break: break-all;
+	overflow: auto;
+	position: relative
+}
+
+.shadow {
+  -moz-box-shadow: 5px 5px 5px #333333;
+  -webkit-box-shadow: 5px 5px 5px #333333;
+  box-shadow: 5px 5px 5px #333333;
 }
 
 p.log_subject.log_flavor_0 {
@@ -82,14 +97,20 @@ p.log_subject.log_flavor_0 {
 	font-weight: bold;
 	text-shadow: 1px 1px 1px #666666;
 	display: block;
+	border-bottom: ridge;
 
 }
 
 div.task_info {
-	float: left;
-	margin-right: .5em;
 	padding: .5em;
 	font-weight: bold;
+	position: absolute;
+	left: 0em;
+	height: 8em;
+}
+
+div.task_info_content {
+	width: 12em;
 }
 
 img.avatar {
@@ -102,7 +123,7 @@ img.action_img {
 	margin: .25em;
 }
 
-div.stakeholder {
+div.taskinfo_name {
 	word-break: normal;
 }
 
@@ -111,5 +132,19 @@ div.task_time {
 }
 
 hr.task_info {
+	clear: both;
 	border: 1px solid;
+}
+
+fieldset.task_region {
+	margin: 1em;
+	background-image: url('ui-bg_diagonals-thick_grey.png');
+}
+
+legend.task_region {
+	padding: .5em;
+	margin-left: 1em;
+	font-size:1.2em;
+	text-shadow: 1px 1px 1px #666666;
+
 }

@@ -2298,7 +2298,7 @@ struct de {
   struct mgstat st;
 };
 
-static void url_encode(const char *src, char *dst, size_t dst_len) {
+void url_encode(const char *src, char *dst, size_t dst_len) {
   static const char *dont_escape = "._-$,;~()";
   static const char *hex = "0123456789abcdef";
   const char *end = dst + dst_len - 1;

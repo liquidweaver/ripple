@@ -13,7 +13,6 @@
 		 <link rel="stylesheet" type="text/css" media="all" href="css/ie6.css"/><![endif]-->
 	<script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
 	<script type="text/javascript" src="js/jquery-ui-1.8.9.custom.min.js"></script>
-	<script type="text/javascript" src="ripple.js"></script>
 	<script type="text/javascript">
 		$(document).ready( function() {
 				$('#login_form').submit( function() {
@@ -72,7 +71,7 @@
 		<legend class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix">Ripple Login</legend>
 		<div id="login_feedback" class="ui-corner-all ui-helper-hidden" style="padding:.5em;"></div>
 		<p> <label for="email">email</label> 
-			<input type="email" id="email" class="inputFields" size="20" tabindex="1" />  
+			<input type="email" id="email" class="inputFields" size="20" tabindex="1" autofocus="autofocus" />  
 		</p> 
 		<p> <label for="password">password</label>
 			<input type="password" id="password" class="inputFields" size="20" tabindex="2" /> 

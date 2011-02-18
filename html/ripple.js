@@ -1,6 +1,9 @@
 var ripple = {
 	backendurl: '',
 	page: 'assigned',
+	user_id: $.cookie( 'user_id' ),
+	email: $.cookie( 'email' ),
+	name: $.cookie( 'name' )
 };
 
 ripple.task_flavors = {
@@ -25,13 +28,20 @@ ripple.change_view = function( page ) {
 		.attr( 'id', 'tasks' )
 		.appendTo( content );
 
+	if ( page != 'tasks' ) {
+		$("#assigned_tasks").hide();
+		$("#stakeholder_tasks").hide();
+	}
+
+	ripple.page = page;
+
 	switch( page ) {
-		case 'watching':
-			break;
-		case 'assigned':
-			break;
-		case 'stakeholder':
+		case 'tasks':
 			ripple.load_all_assigned_tasks();	
+			break;
+		case 'profile':
+			$('#name').val( ripple.name );
+			$('#email').val( ripple.email );
 			break;
 		default:
 			alert( 'Error: view not found.' );
@@ -53,23 +63,33 @@ ripple.query = function( method, args, callback ) {
 
 ripple.load_all_assigned_tasks = function() {
 	ripple.query( 'get_assigned_tasks', {}, function( data ) {
-		$("#tasks")
-			.hide()
-			.html( "" );
+		$("#assigned_tasks")
+			.html( '<legend class="ui-corner-all ui-widget-header task_region">assigned to you</legend>' )
+			.show();
+		$("#stakeholder_tasks")
+			.html( '<legend class="ui-corner-all ui-widget-header task_region">you own</legend>' )
+			.show();
 		$.each( data, function( index, task ) { 
 			ripple.add_task( task.possible_actions, task.task_data );
 		}); 
-		$("#tasks").fadeIn("slow");
+		$('<div style="clear:both;">').appendTo("#assigned_tasks");
+		$('<div style="clear:both;">').appendTo("#stakeholder_tasks");
 	});
 };
 
 ripple.add_task = function( actions, task_data ) {
 	var task =  $('<div>')
-		.addClass('task ui-widget-content ui-corner-all')
-		.resizable({minWidth:150, minHeight:100})
-		.draggable()
-		.appendTo('#tasks');
-	var taskInfo = $('<div class="task_info ui-widget-header">').prependTo( task );
+		.addClass('task ui-helper-hidden ui-widget-content ui-corner-all ui-selectable shadow');
+	var taskInfo = $('<div class="task_info ui-widget-header ui-corner-right">')
+		.hover( function() {
+			$(this).addClass('task_info_content');
+			$(this).children().show();
+		},
+		function() {
+			$(this).removeClass('task_info_content');
+			$(this).children().hide();
+		})
+		.appendTo( task );
 	$('<img src="anonymous.png" class="avatar" />').prependTo( taskInfo );
 	$('<div>')
 		.addClass( "stakeholder" )
@@ -99,8 +119,6 @@ ripple.add_task = function( actions, task_data ) {
 		$('<span>')
 			.html( ripple.get_action_link( action ) )
 			.appendTo( taskInfo );
-		if ( ++i % 5 == 0 )
-			$('<br />').appendTo( taskInfo );
 	});
 
 
@@ -125,8 +143,15 @@ ripple.add_task = function( actions, task_data ) {
 				.html( log.body.replace( /\n/g, '<br />\n' ) )
 				.appendTo( log_entry );
 		}
-		//TODO: Actions
 
+		taskInfo.children().hide();
+		console.log( ripple );
+		console.log( task_data );
+		if ( task_data.assigned == ripple.user_id )   
+			task.appendTo('#assigned_tasks');
+		else if ( task_data.stakeholder == ripple.user_id )
+			task.appendTo('#stakeholder_tasks');
+		task.fadeIn('slow');
 	});
 };
 
