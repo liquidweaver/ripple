@@ -15,6 +15,7 @@ const char* RippleInterface::authorize_url = "/authorize";
 const char* RippleInterface::logout_url = "/logout";
 const char* RippleInterface::login_url = "/login.html";
 const char* RippleInterface::signup_url = "/signup.html";
+const char* RippleInterface::avatar_upload_url = "/upload";
 const char* RippleInterface::signup_ajax_url = "/signup";
 const char* RippleInterface::ajax_reply_start =
   "HTTP/1.1 200 OK\r\n"
@@ -24,6 +25,9 @@ const char* RippleInterface::ajax_reply_start =
 
 const char* RippleInterface::http500 = 
   "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+
+ const char* RippleInterface::http413 =
+ 	"HTTP/1.1 413 Request Entity Too Large\r\n\r\n";
 
 std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
 	out << '{'
@@ -119,14 +123,19 @@ RippleInterface::RippleInterface( Ripple* ripple, const char** options )
 
 }
 
+//TODO: DRY this function
 void * RippleInterface::event_handler( mg_event event, mg_connection* conn,
                                              const mg_request_info* request_info) {
   void *processed = reinterpret_cast<void*>(const_cast<char*>( "yes" ) );
   RippleInterface* inst = RippleInterface::instance;
   string post_data;
   if ( !strcmp( request_info->request_method, "POST" ) ) {
-    char buf[8192];
+    char buf[MAX_POST_SIZE + 1];
     int len = mg_read( conn, buf, sizeof( buf ) );
+	 if ( len == MAX_POST_SIZE + 1 ) {
+	 	mg_printf( conn, http413 );
+		return processed;
+	 }
     if ( len > 0 ) 
       post_data = string( buf, len ); 
   }
@@ -138,6 +147,24 @@ void * RippleInterface::event_handler( mg_event event, mg_connection* conn,
       inst->redirect( conn, request_info,login_url );
     } else if (strcmp(request_info->uri, authorize_url ) == 0) {
       inst->authorize(conn, request_info, post_data );
+    } else if (strcmp(request_info->uri, avatar_upload_url ) == 0) {
+      int user_id = -1;
+      pthread_rwlock_rdlock(&rwlock);
+      try {
+        user_id = inst->get_session(conn)->user_id;
+      }
+      catch ( exception&e ) { }
+      pthread_rwlock_unlock(&rwlock);
+      if ( user_id != -1 ) {
+        try {
+          RippleUser user;
+          inst->ripple->GetUser( user_id, user );
+			 inst->upload_avatar(conn, request_info, post_data, user );
+        }
+        catch( exception& e ) {
+          mg_printf( conn, http500 );
+        }
+      }
     } else if (strcmp(request_info->uri, signup_ajax_url ) == 0) {
       inst->signup(conn, request_info, post_data );
     } else if (strcmp(request_info->uri, logout_url ) == 0) {
@@ -327,6 +354,51 @@ void RippleInterface::signup( struct mg_connection *conn,
 
   mg_printf( conn, "%s{ \"error_msg\": \"%s\", \"name\":\"%s\" }", ajax_reply_start, error_msg.c_str(), name.c_str() );
 
+}
+void RippleInterface::upload_avatar( struct mg_connection *conn,
+                              const struct mg_request_info *request_info,
+                              const string& post_data,
+										RippleUser& user ) {
+	const char* value = mg_get_header( conn, "Content-Type" );
+
+	try {
+		if ( value == NULL )
+			throw runtime_error( "content-type header missing" );
+		string content_type( value );
+		size_t bpos = content_type.find( "boundary=" );
+		if ( bpos == string::npos )
+			throw runtime_error( "could not parse boundary in content-type header" );
+		string content_boundary = content_type.substr( bpos + strlen( "boundary=" ) );
+		char* img_ptr, *name_ptr;
+		int img_len = 0, name_len = 0;
+		name_ptr = reinterpret_cast<char*>( memmem( post_data.data(), post_data.length(), "filename=\"", strlen( "filename=\"" ) ) );
+		if ( name_ptr == NULL )
+			throw runtime_error( "could not locate filename in mime content" );
+		name_ptr += strlen( "filename=\"" );
+		img_ptr = reinterpret_cast<char*>( memmem( post_data.data(), post_data.length(), "\r\n\r\n", 4 ) );
+		if ( img_ptr == NULL )
+			throw runtime_error( "could not locate start of image in mime content" );
+		name_len = reinterpret_cast<char*>( memmem( name_ptr, img_ptr - name_ptr, "\"", 1 ) ) - name_ptr;
+		string file_name( name_ptr, name_len );
+		img_ptr += 4; //2 crlf's
+		//Find the location of the end fence, subtract the position of the start of the data, subtract 4 from the (2 crlf's before end boundary)
+		img_len = reinterpret_cast<char*>( memmem( img_ptr, post_data.length() - ( img_ptr - post_data.data() ), content_boundary.data(),  content_boundary.length() ) ) - img_ptr - 4;
+		
+		cerr << "img_len: " << img_len << ", file_name: " << file_name << endl;
+
+		FILE*	pFile = fopen ( file_name.c_str(), "w");
+		fwrite ( img_ptr, 1, img_len, pFile );
+		fclose (pFile);
+		user.avatar_file = file_name;
+		ripple->UpdateUser( user );
+
+		mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
+	}
+	catch ( exception& e ) {
+		mg_printf( conn, "%s{ \"error_msg\":\"%s\" }", ajax_reply_start, e.what() );
+	}
+
+	
 }
 void RippleInterface::query( struct mg_connection *conn,
                              const struct mg_request_info *request_info,

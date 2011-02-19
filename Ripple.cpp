@@ -53,7 +53,7 @@ void Ripple::InsertUser( RippleUser& ru ) {
 		throw RippleException( "Password must be specified." );
 	
 
-	sql << "INSERT INTO users VALUES (:user_id, :name, :email, :password)",
+	sql << "INSERT INTO users VALUES (:user_id, :name, :email, :password, :avatar_file)",
 		 use( static_cast<const RippleUser&>( ru ) );
 
 	sql << "SELECT last_insert_rowid()", into( ru.user_id );
@@ -73,6 +73,14 @@ void Ripple::GetUser( int user_id, RippleUser& user ) {
 		throw RippleException( "User not found." );
 }
 
+void Ripple::UpdateUser( const RippleUser& user ) {
+
+	sql << "UPDATE users SET name=:name, email=:email," 
+			<< "password=:password, avatar_file=:avatar_file WHERE user_id=:user_id",
+		use( user );
+
+}
+
 RippleUser Ripple::GetUserFromEmailAndPassword( const string& email, const string& password ) {
 	RippleUser ru;
 	indicator ind;
@@ -87,6 +95,7 @@ RippleUser Ripple::GetUserFromEmailAndPassword( const string& email, const strin
 
 void Ripple::DeleteUser( RippleUser& user ) {
 	DeleteUser( user.user_id );
+	user.user_id = -1;
 }
 
 void Ripple::DeleteUser( int user_id ) {

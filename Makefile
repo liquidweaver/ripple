@@ -1,7 +1,10 @@
 all: rippled tests/ripple_tests
 
+nuke: clean
+	rm ripple.db
+
 clean:
-	rm *.o rippled tests/ripple_tests ripple.db tests/ripple.db
+	rm *.o rippled tests/ripple_tests tests/ripple.db
 
 rippled: rippled.cpp Ripple.o RippleInterface.o ripple.db mongoose.o
 	g++ -g -o rippled rippled.cpp Ripple.o RippleInterface.o mongoose.o -lsoci_sqlite3 -lsoci_core -lpthread

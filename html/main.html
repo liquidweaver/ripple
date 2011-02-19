@@ -11,7 +11,7 @@
 		 <script src="js/IE8.js" type="text/javascript"></script><![endif]-->
 	<!--[if lt IE 7]>
 		 <link rel="stylesheet" type="text/css" media="all" href="css/ie6.css"/><![endif]-->
-	<script type="text/javascript" src="js/jquery-1.5.min.js"></script>
+	<script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
 	<script type="text/javascript" src="js/jquery.cookie.js"></script>
 	<script type="text/javascript" src="js/jquery-ui-1.8.9.custom.min.js"></script>
 	<script type="text/javascript" src="timepicker.js"></script>
@@ -71,7 +71,32 @@
 			$("#stakeholder_tasks").sortable().disableSelection();
 			$("#email_btn").button();
 			$("#name_btn").button();
-			$("#avatar_btn").button();
+			$("#avatar_btn").button().click( function() {
+				 //starting setting some animation when the ajax starts and completes
+				 $("#avatar_loading")
+					 .ajaxStart(function(){
+						 $(this).show();
+					 })
+					 .ajaxComplete(function(){
+						 $(this).hide();
+					 });
+				 $.ajaxFileUpload ({
+                url:'upload', 
+                secureuri:false,
+                fileElementId:'avatar_file',
+                dataType: 'json',
+                success: function (data, status) {
+						 if(data.error_msg != '') 
+							 alert(data.error_msg);
+                },
+                error: function (data, status, e) {
+                    alert(e);
+                }
+            });
+        
+			  return false;
+
+			});
 		});
 	</script>
 </head>
@@ -102,8 +127,8 @@
 			</fieldset>
 			<fieldset>
 			<legend>your avatar</legend>
-				<input type="file" id="email" /><br />
-				<input id="avatar_btn" type="submit" value="change" />
+				<input type="file" name="avatar_file" id="avatar_file" /><br />
+				<input id="avatar_btn" type="button" value="change" />
 			</fieldset>
 			</form>
 		</div>

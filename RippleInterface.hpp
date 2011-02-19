@@ -10,6 +10,7 @@
 #define SESSION_TTL 60 * 60 
 #define MAX_EMAIL_LEN 40
 #define MAX_SESSIONS 250
+#define MAX_POST_SIZE 32768
 
 // Describes web session.
 struct session {
@@ -27,14 +28,19 @@ class RippleInterface {
 	private:
 
 		RippleInterface( Ripple* ripple, const char** options );
-		static void * event_handler( mg_event event, mg_connection *conn, const mg_request_info *request_info);
+		static void * event_handler( mg_event event, mg_connection *conn, 
+								const mg_request_info *request_info);
 		int is_authorized(const struct mg_connection *conn, const struct mg_request_info* request_info );
 		void logout( const struct mg_connection* conn, const struct mg_request_info* request_info );
 		void redirect( struct mg_connection *conn, const struct mg_request_info *request_info, const char* target );
 		// A handler for the /authorize endpoint.
 		// Login page form sends user name and password to this endpoint.
-		void authorize( struct mg_connection *conn, const struct mg_request_info *request_info, const string& post_data );
-		void signup( struct mg_connection *conn, const struct mg_request_info *request_info, const string& post_data );
+		void authorize( struct mg_connection *conn, const struct mg_request_info *request_info,
+								const string& post_data );
+		void signup( struct mg_connection *conn, const struct mg_request_info *request_info, 
+								const string& post_data );
+		void upload_avatar( struct mg_connection *conn, const struct mg_request_info *request_info, 
+								const string& post_data, RippleUser& user );
 		void query( struct mg_connection *conn, const struct mg_request_info *request_info,
 						const string& post_data, const RippleUser& user );
 		struct session* get_session(const struct mg_connection *conn);
@@ -52,9 +58,11 @@ class RippleInterface {
 		static const char* logout_url;
 		static const char* login_url;
 		static const char* signup_url;
+		static const char* avatar_upload_url;
 		static const char* signup_ajax_url;
 		static const char* ajax_reply_start;
 		static const char* http500; 
+		static const char* http413;
 };
 
 #endif //RIPPLEINTERFACE_HPP

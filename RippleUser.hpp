@@ -15,6 +15,7 @@ public:
 	string name;
 	string email;
 	string password;
+	string avatar_file;
 };
 
 namespace soci
@@ -29,6 +30,7 @@ template<> struct type_conversion<RippleUser>
 		 p.name = v.get<std::string>("name");
 		 p.email = v.get<std::string>("email");
 		 p.password = v.get<std::string>("password");
+		 v.get_indicator("avatar_file") == i_null ? p.avatar_file = "" : p.avatar_file = v.get<string>("avatar_file");
     }
 
     static void to_base(const RippleUser& p, values& v, indicator& ind) {
@@ -36,6 +38,7 @@ template<> struct type_conversion<RippleUser>
 	 	v.set("name", p.name );
 	 	v.set("email", p.email );
 	 	v.set("password", p.password );
+		v.set("avatar_file", p.avatar_file, p.avatar_file == "" ? i_null : i_ok );
 
 		ind = i_ok;
     }

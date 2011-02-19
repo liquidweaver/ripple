@@ -22,6 +22,7 @@ static const char *options[] = {
   "listening_ports", "8080",
   "num_threads", "5",
   "index_files", "main.html",
+  "extra_mime_types", "css=text/css,png=image/png",
   NULL
 };
 

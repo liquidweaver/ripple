@@ -16,6 +16,7 @@ class Ripple {
 		void InsertUser( RippleUser& ru );
 
 		void GetUser( int user_id, RippleUser& user );
+		void UpdateUser( const RippleUser& user );
 		RippleUser GetUserFromEmailAndPassword( const string& email, const string& password );
 
 		void DeleteUser( RippleUser& user );

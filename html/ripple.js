@@ -145,8 +145,6 @@ ripple.add_task = function( actions, task_data ) {
 		}
 
 		taskInfo.children().hide();
-		console.log( ripple );
-		console.log( task_data );
 		if ( task_data.assigned == ripple.user_id )   
 			task.appendTo('#assigned_tasks');
 		else if ( task_data.stakeholder == ripple.user_id )

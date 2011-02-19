@@ -2,7 +2,8 @@ CREATE TABLE users (
 	user_id INTEGER PRIMARY KEY NOT NULL,
 	name TEXT NOT NULL,
 	email TEXT NOT NULL,
-	password TEXT NOT NULL
+	password TEXT NOT NULL,
+	avatar_file TEXT
 );
 
 CREATE TABLE tasks (
