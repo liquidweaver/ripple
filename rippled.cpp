@@ -17,20 +17,11 @@
 #include "Ripple.hpp"
 #include "RippleInterface.hpp"
 
-static const char *options[] = {
-  "document_root", "html",
-  "listening_ports", "8080",
-  "num_threads", "5",
-  "index_files", "main.html",
-  "extra_mime_types", "css=text/css,png=image/png",
-  NULL
-};
-
 using namespace std;
 
 int main( int argc, char* argv[] ) {
   Ripple* ripple = Ripple::Instance();
-  RippleInterface* ri = RippleInterface::Instance( ripple, options );
+  RippleInterface* ri = RippleInterface::Instance( ripple );
 
   cout << "Press any key to stop..." << endl;
   cin.get();

@@ -3,7 +3,7 @@ var ripple = {
 	page: 'assigned',
 	user_id: $.cookie( 'user_id' ),
 	email: $.cookie( 'email' ),
-	name: $.cookie( 'name' )
+	name: $.cookie( 'name' ),
 };
 
 ripple.task_flavors = {
@@ -40,8 +40,7 @@ ripple.change_view = function( page ) {
 			ripple.load_all_assigned_tasks();	
 			break;
 		case 'profile':
-			$('#name').val( ripple.name );
-			$('#email').val( ripple.email );
+			ripple.refresh_profile();
 			break;
 		default:
 			alert( 'Error: view not found.' );
@@ -90,7 +89,10 @@ ripple.add_task = function( actions, task_data ) {
 			$(this).children().hide();
 		})
 		.appendTo( task );
-	$('<img src="anonymous.png" class="avatar" />').prependTo( taskInfo );
+	if ( task_data.stakeholder_avatar )
+		$('<img src="' + task_data.stakeholder_avatar + '" class="avatar" />').prependTo( taskInfo );
+	else
+		$('<img src="anonymous.png" class="avatar" />').prependTo( taskInfo );
 	$('<div>')
 		.addClass( "stakeholder" )
 		.html( task_data.stakeholder_name )
@@ -233,4 +235,15 @@ ripple.get_action_link = function( action_id ) {
 	}
 
 	return "<img src=\"" + image_name + "\" title=\"" + title_text + "\" class=\"action_img\"/>";
+};
+
+ripple.refresh_profile = function() {
+	ripple.query( "get_user", { user_id: $.cookie( "user_id" ) }, function( data ) {
+			$('#name').val( data.name );
+			$('#email').val( data.email );
+			if ( data.avatar_file )
+				$('#avatar_preview').html( '<img src="' + data.avatar_file + '" class="avatar" />' );
+			else
+				$('#avatar_preview').html( '<img src="anonymous.png" class="avatar" />' );
+			});
 };

@@ -1,3 +1,6 @@
 [submodule "soci"]
 	path = soci
 	url = git://soci.git.sourceforge.net/gitroot/soci/soci
+[submodule "restcomet"]
+	path = restcomet
+	url = git@github.com:liquidweaver/restcomet.git

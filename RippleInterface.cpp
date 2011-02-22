@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <sys/types.h>	//stat and mkdir
+#include <sys/stat.h>	//""
+#include <unistd.h>		//""
 #include <string.h> //Some helper functions for the c glue
 #include <sstream>
 #include <iostream>
@@ -11,6 +14,15 @@
 
 RippleInterface* RippleInterface::instance = NULL;
 pthread_rwlock_t RippleInterface::rwlock = PTHREAD_RWLOCK_INITIALIZER;
+const char * RippleInterface::mg_options[] = {
+  "document_root", DOC_ROOT,
+  "listening_ports", "8080",
+  "num_threads", "5",
+  "index_files", "main.html",
+  "extra_mime_types", "css=text/css,png=image/png",
+  NULL
+};
+
 const char* RippleInterface::authorize_url = "/authorize";
 const char* RippleInterface::logout_url = "/logout";
 const char* RippleInterface::login_url = "/login.html";
@@ -28,6 +40,20 @@ const char* RippleInterface::http500 =
 
  const char* RippleInterface::http413 =
  	"HTTP/1.1 413 Request Entity Too Large\r\n\r\n";
+
+std::ostream& operator<<(std::ostream& out, const RippleUser& user ) {
+	out << '{'
+		<< '"' << "user_id" << "\":" << user.user_id << ','
+		<< '"' << "name" << "\":\"" << JSON::escape( user.name ) << "\","
+		<< '"' << "email" << "\":\"" << JSON::escape( user.email ) << '"';
+	if ( user.avatar_file != "" )
+		out << ",\"avatar_file" << "\":\"" << user.avatar_file << '"';
+
+	out << '}';
+
+	return out;
+
+}
 
 std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
 	out << '{'
@@ -58,6 +84,8 @@ std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
 		RippleUser stakeholder;
 		Ripple::Instance()->GetUser( task.stakeholder, stakeholder );
 		out << ",\"" << "stakeholder_name\":\"" << JSON::escape( stakeholder.name ) << "\"";
+		if ( stakeholder.avatar_file != "" ) 
+			out << ",\"stakeholder_avatar\":\"" << JSON::escape( stakeholder.avatar_file ) << "\"";
 	}
 	catch ( ... ) { }
 
@@ -65,6 +93,8 @@ std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
 		RippleUser assigned;
 		Ripple::Instance()->GetUser( task.assigned, assigned );
 		out << ",\"" << "assigned_name\":\"" << JSON::escape( assigned.name ) << "\"";
+		if ( assigned.avatar_file != "" ) 
+			out << ",\"assigned_avatar\":\"" << JSON::escape( assigned.avatar_file ) << "\"";
 	}
 	catch ( ... ) { }
 
@@ -93,9 +123,9 @@ std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
 }
   
 
-RippleInterface* RippleInterface::Instance( Ripple* ripple, const char** options ) {
+RippleInterface* RippleInterface::Instance( Ripple* ripple ) {
   if ( instance == NULL )
-    instance = new RippleInterface( ripple, options );
+    instance = new RippleInterface( ripple );
 
   return instance;
 }
@@ -108,17 +138,29 @@ void RippleInterface::Release() {
 
 }
 
-RippleInterface::RippleInterface( Ripple* ripple, const char** options )
+RippleInterface::RippleInterface( Ripple* ripple )
   : ripple( ripple ) {
 
-  struct mg_context *ctx;
 
   // Initialize random number generator. It will be used later on for
   // the session identifier creation.
   srand((unsigned) time(0));
 
+  // check if web and avatar folders exist
+  struct stat st;
+  if ( stat( DOC_ROOT, &st ) != 0 ) {
+  	if ( mkdir( DOC_ROOT, S_IRWXU | S_IRWXG  ) != 0 ) {
+		throw runtime_error( "Could not create document root (" DOC_ROOT ")!" );
+	}
+  }
+  if ( stat( DOC_ROOT "/" AVATAR_PATH, &st ) != 0 ) {
+  	if ( mkdir( DOC_ROOT "/" AVATAR_PATH, S_IRWXU | S_IRWXG ) != 0 ) {
+		throw runtime_error( "Could not create avatar path (" DOC_ROOT "/" AVATAR_PATH  ")!" );
+	}
+  }
+
   // Setup and start Mongoose
-  ctx = mg_start(&event_handler, NULL,  options);
+  ctx = mg_start(&event_handler, NULL,  mg_options);
   assert(ctx != NULL);
 
 }
@@ -383,13 +425,31 @@ void RippleInterface::upload_avatar( struct mg_connection *conn,
 		img_ptr += 4; //2 crlf's
 		//Find the location of the end fence, subtract the position of the start of the data, subtract 4 from the (2 crlf's before end boundary)
 		img_len = reinterpret_cast<char*>( memmem( img_ptr, post_data.length() - ( img_ptr - post_data.data() ), content_boundary.data(),  content_boundary.length() ) ) - img_ptr - 4;
+		size_t dot_pos = file_name.find_last_of( '.' );
+		if ( dot_pos == string::npos )
+			throw runtime_error( "file extension required." );
+		{ char buf[16];
+			snprintf( buf, 16, "%d", user.user_id ); 
+			file_name = file_name.replace( 0, dot_pos, buf );
+		}
 		
 		cerr << "img_len: " << img_len << ", file_name: " << file_name << endl;
+		string full_path( mg_get_option( ctx, "document_root" ) );
+		string image_name( AVATAR_PATH "/" );
+		image_name += file_name;
+		full_path.append( "/" ).append( image_name );
 
-		FILE*	pFile = fopen ( file_name.c_str(), "w");
+
+		if ( user.avatar_file != "" ) {
+			string delete_path( mg_get_option( ctx, "document_root" ) );
+			delete_path.append( "/" ).append( user.avatar_file );
+
+			unlink( delete_path.c_str() );
+		}
+		FILE*	pFile = fopen ( full_path.c_str(), "w");
 		fwrite ( img_ptr, 1, img_len, pFile );
 		fclose (pFile);
-		user.avatar_file = file_name;
+		user.avatar_file = image_name;
 		ripple->UpdateUser( user );
 
 		mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
@@ -408,8 +468,32 @@ void RippleInterface::query( struct mg_connection *conn,
 
   try {
     if ( method != "" ) {
-	 	if ( method == "update_info" ) {
-		
+	 	if ( method == "update_my_user" ) {
+			RippleUser new_user( user );
+			string name = get_post_var( post_data, "name" );
+			string email = get_post_var( post_data, "email" );
+			string password = get_post_var( post_data, "password" );
+
+			if ( name != "" )
+				new_user.name = name;
+			if ( email != "" )
+				new_user.email = email;
+			if ( password != "" )
+				new_user.password = password;
+
+			ripple->UpdateUser( new_user );
+		}
+	 	if ( method == "get_user" ) {
+			int user_id = atoi( get_post_var( post_data, "user_id" ).c_str() );
+			if ( user_id == 0 )
+				throw runtime_error( "getuser: no user_id" );
+
+			RippleUser ru;
+			ripple->GetUser( user_id, ru );
+			stringstream user_serialized;
+			user_serialized << ru;
+			
+			mg_printf( conn, "%s%s", ajax_reply_start, user_serialized.str().c_str() );
 		}
 	 	if ( method == "create_task" ) {
 			string description = get_post_var( post_data, "description" );

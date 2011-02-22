@@ -69,28 +69,32 @@
 			$("#create_task_btn").button();
 			$("#assigned_tasks").sortable().disableSelection();
 			$("#stakeholder_tasks").sortable().disableSelection();
-			$("#email_btn").button();
-			$("#name_btn").button();
+			$("#email_btn").button().click( function() {
+				ripple.query( "update_my_user", { email: $('#email').val() }, ripple.refresh_profile );
+			});
+			$("#name_btn").button().click( function() {
+				ripple.query( "update_my_user", { name: $('#name').val() }, ripple.refresh_profile );
+			});
+			$("#password_btn").button().click( function() {
+				ripple.query( "update_my_user", { password: $('#password').val() }, ripple.refresh_profile );
+			});
 			$("#avatar_btn").button().click( function() {
 				 //starting setting some animation when the ajax starts and completes
-				 $("#avatar_loading")
-					 .ajaxStart(function(){
-						 $(this).show();
-					 })
-					 .ajaxComplete(function(){
-						 $(this).hide();
-					 });
 				 $.ajaxFileUpload ({
                 url:'upload', 
                 secureuri:false,
                 fileElementId:'avatar_file',
                 dataType: 'json',
                 success: function (data, status) {
-						 if(data.error_msg != '') 
-							 alert(data.error_msg);
+					 if(data.error_msg != '') 
+						 alert(data.error_msg);
+					 else {
+						 ripple.refresh_profile();
+					 }
+							 	
                 },
                 error: function (data, status, e) {
-                    alert(e);
+					 	console.log( e );
                 }
             });
         
@@ -125,8 +129,14 @@
 				<input type="email" id="email" value="" />
 				<input id="email_btn" type="button" value="change" />
 			</fieldset>
+			<legend>change password</legend>
+				<input type="password" id="password" value="" />
+				<input id="password_btn" type="button" value="change" />
+			</fieldset>
 			<fieldset>
 			<legend>your avatar</legend>
+				<br />
+				<div id="avatar_preview"></div>
 				<input type="file" name="avatar_file" id="avatar_file" /><br />
 				<input id="avatar_btn" type="button" value="change" />
 			</fieldset>

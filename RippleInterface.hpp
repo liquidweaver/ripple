@@ -11,6 +11,8 @@
 #define MAX_EMAIL_LEN 40
 #define MAX_SESSIONS 250
 #define MAX_POST_SIZE 32768
+#define DOC_ROOT "html"
+#define AVATAR_PATH "avatars"
 
 // Describes web session.
 struct session {
@@ -22,12 +24,12 @@ struct session {
 
 class RippleInterface {
 	public:
-		static RippleInterface* Instance( Ripple* ripple, const char** options ); 
+		static RippleInterface* Instance( Ripple* ripple ); 
 		static void Release();
 
 	private:
 
-		RippleInterface( Ripple* ripple, const char** options );
+		RippleInterface( Ripple* ripple );
 		static void * event_handler( mg_event event, mg_connection *conn, 
 								const mg_request_info *request_info);
 		int is_authorized(const struct mg_connection *conn, const struct mg_request_info* request_info );
@@ -53,7 +55,9 @@ class RippleInterface {
 		static pthread_rwlock_t rwlock;
 		session sessions[MAX_SESSIONS];  // Current sessions
 		Ripple* ripple;
+		struct mg_context *ctx;
 		//constants
+		static const char* mg_options[];
 		static const char* authorize_url;
 		static const char* logout_url;
 		static const char* login_url;

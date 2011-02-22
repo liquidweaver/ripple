@@ -2,3 +2,7 @@ ripple.db
 tags
 rippled
 *.o
+mongoose/.hg
+mongoose/win32
+html/avatars
+tests/ripple_tests
