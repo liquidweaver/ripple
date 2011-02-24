@@ -3,12 +3,93 @@
 #include <soci/soci.h>
 #include <soci/sqlite3/soci-sqlite3.h>
 #include <iostream> //DEBUGGING
+#include "restcomet/restcomet.h"
 #include "JSON.hpp"
 
 using namespace soci;
 
 Ripple* Ripple::instance = NULL;
 backend_factory const &backEnd = *soci::factory_sqlite3();
+std::ostream& operator<<(std::ostream& out, const RippleUser& user ) {
+
+	out << '{'
+		<< '"' << "user_id" << "\":" << user.user_id << ','
+		<< '"' << "name" << "\":\"" << JSON::escape( user.name ) << "\","
+		<< '"' << "email" << "\":\"" << JSON::escape( user.email ) << '"';
+	if ( user.avatar_file != "" )
+		out << ",\"avatar_file" << "\":\"" << user.avatar_file << '"';
+
+	out << '}';
+
+	return out;
+
+}
+
+std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
+	out << '{'
+		<< '"' << "log_id" << "\":" << log.log_id << ','
+		<< '"' << "flavor" << "\":" << log.flavor << ','
+		<< '"' << "body" <<  "\":\"" << JSON::escape( log.Body() ) << '"' << ','
+		<< '"' << "subject" <<  "\":\"" << JSON::escape( log.Subject() ) << '"' << ','
+		<< '"' << "user_id" << "\":"  << log.user_id << ','
+		<< '"' << "task_id" << "\":" << log.task_id << ','
+		<< '"' << "created_date" << "\":\"" << JSON::rfc3339( log.created_date ) << '"'
+		<< '}';
+
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
+
+	out << '{'
+		<< '"' << "task_id" << "\":" << task.task_id << ','
+		<< '"' << "stakeholder" << "\":" << task.stakeholder << ','
+		<< '"' << "assigned" << "\":" << task.assigned << ','
+		<< '"' << "start_date" << "\":\"" << JSON::rfc3339( task.start_date ) << "\","
+		<< '"' << "due_date" << "\":\"" << JSON::rfc3339( task.due_date ) << "\","
+		<< '"' << "state" << "\":"  << task.state << ','
+		<< '"' << "parent_task" << "\":" << task.parent_task;
+		
+	try { 
+		RippleUser stakeholder;
+		Ripple::instance->GetUser( task.stakeholder, stakeholder );
+		out << ",\"" << "stakeholder_name\":\"" << JSON::escape( stakeholder.name ) << "\"";
+		if ( stakeholder.avatar_file != "" ) 
+			out << ",\"stakeholder_avatar\":\"" << JSON::escape( stakeholder.avatar_file ) << "\"";
+	}
+	catch ( ... ) { }
+
+	try { 
+		RippleUser assigned;
+		Ripple::instance->GetUser( task.assigned, assigned );
+		out << ",\"" << "assigned_name\":\"" << JSON::escape( assigned.name ) << "\"";
+		if ( assigned.avatar_file != "" ) 
+			out << ",\"assigned_avatar\":\"" << JSON::escape( assigned.avatar_file ) << "\"";
+	}
+	catch ( ... ) { }
+
+	vector<int> log_ids;
+
+	Ripple::instance->GetLogsForTask( task, log_ids );
+
+	if ( log_ids.size() > 0 ) {
+		out << ",\"logs\":[";
+
+		for( vector<int>::const_iterator log_id = log_ids.begin(); log_id != log_ids.end(); ++log_id ) {
+			RippleLog log;
+			Ripple::instance->GetLog( *log_id, log );
+			out << log;
+			if ( log_id + 1 != log_ids.end() )
+				out << ',';
+		}
+
+		out << ']';
+	}
+	out << '}';
+
+	return out;
+}
+  
 
 Ripple* Ripple::Instance() {
 	if ( instance == NULL )
@@ -40,6 +121,8 @@ Ripple::Ripple() {
 	KnownFlavors.push_back( RLF_REOPENED );
 	KnownFlavors.push_back( RLF_CLOSED );
 	KnownFlavors.push_back( RLF_CANCELED );
+
+	rc = rc::restcomet::Instance( EVENTS_PORT );
 }
 
 void Ripple::InsertUser( RippleUser& ru ) {
@@ -111,6 +194,7 @@ void Ripple::DeleteUser( int user_id ) {
 RippleTask Ripple::CreateTask( const RippleUser& ru, const string& description, std::time_t start, std::time_t due ) {
 	if ( description == "" )
 		throw RippleException( "You must enter a description when creating a task." );
+	transaction tr(sql);
 
 	RippleTask rt( ru );
 	rt.start_date = start;
@@ -119,6 +203,16 @@ RippleTask Ripple::CreateTask( const RippleUser& ru, const string& description, 
 
 	RippleLog rl( ru, rt, RLF_CREATED, description );
 	InsertLog( rl );
+
+	stringstream task_data, user_id;
+	task_data << rt;
+	user_id << rt.assigned;
+	tr.commit();
+	rc->SubmitEvent( user_id.str(), task_data.str() );
+	if ( rt.assigned != rt.stakeholder ) {
+		user_id << rt.stakeholder;
+		rc->SubmitEvent( user_id.str(), task_data.str() );
+	}
 
 	return rt;
 }
@@ -326,21 +420,27 @@ string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor,
 		case RLF_ACCEPTED:
 			if (!task.IsAssigned( requestor ) )
 				return string( "You must be assigned to a task to accept it." );
+			if ( task.IsStakeHolder( requestor ) )
+				return string( "Acceptance by the stakeholder is implicit." );
 			if ( task.state != RTS_OPEN )
 				return string( "You cannot accept a task unless it is open." ); 
 			break;
 		case RLF_STARTED:
 			if (!task.IsAssigned( requestor ) )
 				return string( "You must be assigned to a task to start it." );
+			if ( task.IsStakeHolder( requestor ) )
+				return string( "Acceptance by the stakeholder is implicit." );
 			if ( task.state != RTS_OPEN && task.state != RTS_ACCEPTED )
 				return string( "You cannot start a task unless it is open or accepted." ); 
 			break;
 		case RLF_COMPLETED:
 			if (!task.IsAssigned( requestor ) )
 				return string( "You must be assigned to a task to complete it." );
+			if ( task.IsStakeHolder( requestor ) )
+				return string( "The stakeholder just closes a task to complete it." );
 			if ( !(task.state == RTS_OPEN || task.state == RTS_ACCEPTED || 
 						task.state == RTS_STARTED || task.state == RTS_COMPLETED ) )
-				return string( "You cannot complete a task unless it is open, accepted, started, "
+				return string( "You cannot complete a task unless it is accepted or started, "
 						"or has not been completed back to the stakeholder." ); 
 			if ( task.state == RTS_COMPLETED ) {
 				vector<int> history;
@@ -411,6 +511,7 @@ void Ripple::InsertTask( RippleTask& task ) {
 		use( static_cast<const RippleTask&>( task ) );
 
 	sql << "SELECT last_insert_rowid()", into( task.task_id );
+
 }
 
 void Ripple::InsertLog( RippleLog& log ) {
@@ -425,6 +526,7 @@ void Ripple::InsertLog( RippleLog& log ) {
 
 void Ripple::UpdateTask( const RippleTask& task, RippleLog& log ) {
 
+	transaction tr(sql);
 	sql << "UPDATE tasks SET "
 		<< "stakeholder=:stakeholder, assigned=:assigned, start_date=:start_date, "
 		<< "due_date=:due_date, state=:state, parent_task=:parent_task "
@@ -432,5 +534,15 @@ void Ripple::UpdateTask( const RippleTask& task, RippleLog& log ) {
 		use( task );
 
 	InsertLog( log );
+	tr.commit();
+
+	stringstream task_data, user_id;
+	task_data << task;
+	user_id << task.assigned;
+	rc->SubmitEvent( user_id.str(), task_data.str() );
+	if ( task.assigned != task.stakeholder ) {
+		user_id << task.stakeholder;
+		rc->SubmitEvent( user_id.str(), task_data.str() );
+	}
 }
 

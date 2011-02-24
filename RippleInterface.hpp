@@ -13,6 +13,9 @@
 #define MAX_POST_SIZE 32768
 #define DOC_ROOT "html"
 #define AVATAR_PATH "avatars"
+#ifndef INTERFACE_PORT
+	#define INTERFACE_PORT "8080"
+#endif
 
 // Describes web session.
 struct session {

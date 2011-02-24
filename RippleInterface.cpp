@@ -12,11 +12,14 @@
 #include "mongoose/mongoose.h"
 #include "JSON.hpp"
 
+std::ostream& operator<<(std::ostream& out, const RippleUser& user );
+std::ostream& operator<<(std::ostream& out, const RippleLog& log );
+std::ostream& operator<<(std::ostream& out, const RippleTask& task );
 RippleInterface* RippleInterface::instance = NULL;
 pthread_rwlock_t RippleInterface::rwlock = PTHREAD_RWLOCK_INITIALIZER;
 const char * RippleInterface::mg_options[] = {
   "document_root", DOC_ROOT,
-  "listening_ports", "8080",
+  "listening_ports", INTERFACE_PORT,
   "num_threads", "5",
   "index_files", "main.html",
   "extra_mime_types", "css=text/css,png=image/png",
@@ -41,87 +44,6 @@ const char* RippleInterface::http500 =
  const char* RippleInterface::http413 =
  	"HTTP/1.1 413 Request Entity Too Large\r\n\r\n";
 
-std::ostream& operator<<(std::ostream& out, const RippleUser& user ) {
-	out << '{'
-		<< '"' << "user_id" << "\":" << user.user_id << ','
-		<< '"' << "name" << "\":\"" << JSON::escape( user.name ) << "\","
-		<< '"' << "email" << "\":\"" << JSON::escape( user.email ) << '"';
-	if ( user.avatar_file != "" )
-		out << ",\"avatar_file" << "\":\"" << user.avatar_file << '"';
-
-	out << '}';
-
-	return out;
-
-}
-
-std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
-	out << '{'
-		<< '"' << "log_id" << "\":" << log.log_id << ','
-		<< '"' << "flavor" << "\":" << log.flavor << ','
-		<< '"' << "body" <<  "\":\"" << JSON::escape( log.Body() ) << '"' << ','
-		<< '"' << "subject" <<  "\":\"" << JSON::escape( log.Subject() ) << '"' << ','
-		<< '"' << "user_id" << "\":"  << log.user_id << ','
-		<< '"' << "task_id" << "\":" << log.task_id << ','
-		<< '"' << "created_date" << "\":\"" << JSON::rfc3339( log.created_date ) << '"'
-		<< '}';
-
-	return out;
-}
-
-std::ostream& operator<<(std::ostream& out, const RippleTask& task ) {
-
-	out << '{'
-		<< '"' << "task_id" << "\":" << task.task_id << ','
-		<< '"' << "stakeholder" << "\":" << task.stakeholder << ','
-		<< '"' << "assigned" << "\":" << task.assigned << ','
-		<< '"' << "start_date" << "\":\"" << JSON::rfc3339( task.start_date ) << "\","
-		<< '"' << "due_date" << "\":\"" << JSON::rfc3339( task.due_date ) << "\","
-		<< '"' << "state" << "\":"  << task.state << ','
-		<< '"' << "parent_task" << "\":" << task.parent_task;
-		
-	try { 
-		RippleUser stakeholder;
-		Ripple::Instance()->GetUser( task.stakeholder, stakeholder );
-		out << ",\"" << "stakeholder_name\":\"" << JSON::escape( stakeholder.name ) << "\"";
-		if ( stakeholder.avatar_file != "" ) 
-			out << ",\"stakeholder_avatar\":\"" << JSON::escape( stakeholder.avatar_file ) << "\"";
-	}
-	catch ( ... ) { }
-
-	try { 
-		RippleUser assigned;
-		Ripple::Instance()->GetUser( task.assigned, assigned );
-		out << ",\"" << "assigned_name\":\"" << JSON::escape( assigned.name ) << "\"";
-		if ( assigned.avatar_file != "" ) 
-			out << ",\"assigned_avatar\":\"" << JSON::escape( assigned.avatar_file ) << "\"";
-	}
-	catch ( ... ) { }
-
-	vector<int> log_ids;
-
-	//Good thing Ripple is a singleton...
-	Ripple::Instance()->GetLogsForTask( task, log_ids );
-
-
-	if ( log_ids.size() > 0 ) {
-		out << ",\"logs\":[";
-
-		for( vector<int>::const_iterator log_id = log_ids.begin(); log_id != log_ids.end(); ++log_id ) {
-			RippleLog log;
-			Ripple::Instance()->GetLog( *log_id, log );
-			out << log;
-			if ( log_id + 1 != log_ids.end() )
-				out << ',';
-		}
-
-		out << ']';
-	}
-	out << '}';
-
-	return out;
-}
-  
 
 RippleInterface* RippleInterface::Instance( Ripple* ripple ) {
   if ( instance == NULL )
@@ -523,24 +445,8 @@ void RippleInterface::query( struct mg_connection *conn,
           for  ( vector<int>::const_iterator task_id = task_ids.begin(); task_id != task_ids.end(); ++task_id ) {
 				 RippleTask rt;
 				 ripple->GetTask( *task_id, rt );
+				 json << rt;
 
-				 json << "{\"possible_actions\":[";
-
-				 map<RIPPLE_LOG_FLAVOR, string> actions;
-				 ripple->GetPossibleActions( rt, user, actions );
-				 bool first = true;
-				 for( map<RIPPLE_LOG_FLAVOR, string>::const_iterator action = actions.begin();
-						 action != actions.end(); ++action ) {
-					 if ( action->second == "" ) {
-						 if ( first ) 
-							 first = false;
-						 else
-							 json << ',';
-						 json << action->first;
-					 }
-				 }
-
-				 json << "], \"task_data\":" << rt << "}";  
 				 if ( task_id + 1 != task_ids.end() )
 					 json << ',';
 				 }
@@ -553,6 +459,32 @@ void RippleInterface::query( struct mg_connection *conn,
          }
        
       }
+
+		if ( method == "get_possible_actions" ) {
+			stringstream json;
+			
+			int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
+			RippleTask rt;
+			ripple->GetTask( task_id, rt );
+			json << "{\"task_id\":" << task_id << ",\"possible_actions\":[";
+
+			map<RIPPLE_LOG_FLAVOR, string> actions;
+			ripple->GetPossibleActions( rt, user, actions );
+			bool first = true;
+			for( map<RIPPLE_LOG_FLAVOR, string>::const_iterator action = actions.begin();
+					action != actions.end(); ++action ) {
+				if ( action->second == "" ) {
+					if ( first ) 
+						first = false;
+					else
+						json << ',';
+					json << action->first;
+				}
+			}
+
+			json << "]}";  
+			mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+		}
     }
     else {
       throw runtime_error( "Invalid query." );

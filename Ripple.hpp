@@ -5,7 +5,12 @@
 #include "RippleLog.hpp"
 #include "RippleDefines.hpp"
 #include "RippleException.hpp"
+#include "restcomet/restcomet.h"
 #include <soci/soci.h>
+
+#ifndef EVENTS_PORT
+	#define EVENTS_PORT 8081
+#endif
 
 class Ripple {
 	public:
@@ -49,6 +54,8 @@ class Ripple {
 		 */
 		void GetPossibleActions( const RippleTask& task, const RippleUser& requestor, map<RIPPLE_LOG_FLAVOR, string>& actions );
 
+		//Needs to access db functions to work
+		friend std::ostream& operator<<(std::ostream& out, const RippleTask& task );
 	private:
 		static Ripple* instance;
 		Ripple();
@@ -84,5 +91,6 @@ class Ripple {
 		void UpdateTask( const RippleTask& task, RippleLog& log );
 
 		soci::session sql;
+		rc::restcomet* rc;
 };
 #endif//RIPPLE_H

@@ -76,13 +76,16 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
 
 
 div.task {
-	float: left;
 	width: 18em;
 	height: 12em;
-	margin: 1em;
 	padding: 1em 1em 1em  2em;
-	word-break: break-all;
 	overflow: auto;
+}
+
+div.task_container {
+	float: left;
+	margin: 1em;
+	word-break: break-all;
 	position: relative
 }
 
@@ -105,8 +108,9 @@ div.task_info {
 	padding: .5em;
 	font-weight: bold;
 	position: absolute;
+	top:1em;
 	left: 0em;
-	height: 8em;
+	min-height: 8em;
 }
 
 div.task_info_content {
@@ -157,4 +161,10 @@ img.avatar {
 #avatar_preview img {
 	margin: 1em;
 	border: groove;
+}
+
+div.task_action_content textarea {
+	font-size: .7em;
+	display: block;
+	width: 95%;
 }
