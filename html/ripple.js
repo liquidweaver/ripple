@@ -102,34 +102,38 @@ ripple.generate_task_dom = function( task ) {
 	var task_element =  $('<div>')
 		.addClass('task ui-widget-content ui-corner-all ui-selectable shadow')
 		.appendTo( task_container );
-	var taskInfo = $('<div class="task_info ui-widget-header ui-corner-right">')
-		.hover( function() {
-			$(this)
-				.css( 'z-index', 10 )
-				.addClass('task_info_content shadow');
-			$(this).children().show();
-			ripple.query( "get_possible_actions", { task_id: task.task_id }, function( data ) {
-				var task_actions = $( '#task_' + data.task_id + ' .task_actions' );
-				task_actions.html('');
-				var action_list = $('<div>');
-				for ( i=0; i < data.possible_actions.length; i++ ) {
-					ripple.add_action( task.task_id, data.possible_actions[i], action_list );
-				}
-				action_list.accordion({ animated: false,
-												collapsible: true,
-												autoHeight: false,
-												active: false
-				});
-				action_list.children().css( 'readonly: false');
-				action_list.appendTo( task_actions );
-			});
-		},
-		function( event ) {
-			if ( event.target == this ) { //win chrome bug fix
+	var taskInfo = $('<div class="task_info ui-widget-header ui-corner-right ">')
+		.css( 'cursor', 'pointer' )
+		.click( function( event ) {
+			if ( event.target != this ) return;
+			if ( $(this).hasClass( 'task_info_content' ) ) {
 				$(this)
+					.css( 'cursor', 'pointer' )
 					.css( 'z-index', '' )
 					.removeClass('task_info_content shadow');
 				$(this).children().hide();
+			}
+			else {
+				$(this)
+					.css( 'z-index', 10 )
+					.css( 'cursor', 'default' )
+					.addClass('task_info_content shadow');
+				$(this).children().show();
+				ripple.query( "get_possible_actions", { task_id: task.task_id }, function( data ) {
+					var task_actions = $( '#task_' + data.task_id + ' .task_actions' );
+					task_actions.html('');
+					var action_list = $('<div>');
+					for ( i=0; i < data.possible_actions.length; i++ ) {
+						ripple.add_action( task.task_id, data.possible_actions[i], action_list );
+					}
+					action_list.accordion({ animated: false,
+													collapsible: true,
+													autoHeight: false,
+													active: false
+					});
+					action_list.children().css( 'readonly: false');
+					action_list.appendTo( task_actions );
+				});
 			}
 		})
 		.appendTo( task_container );
@@ -163,30 +167,41 @@ ripple.generate_task_dom = function( task ) {
 		.addClass( "task_actions" )
 		.appendTo( taskInfo );
 
-	var i = 0;
+	for( i = task.logs.length - 1; i >= 0; i-- ) {
+		var log = task.logs[i]
+		var log_entry = $('<div class="log_entry">')
+			.addClass('log_flavor_' + task.logs[i].flavor);
 
-	$.each( task.logs, function( index, log ) {
-		var log_entry = $('<div>')
-			.addClass('log_entry_flavor_' + log.flavor)
-			.appendTo( task_element );
-
-		log_entry.addClass( "log_flavor_" + log.flavor );
-		if ( log.subject != "" ) {
+		if ( task.logs[i].subject != "" ) {
 			$('<p>')
 				.addClass('log_subject')
-				.addClass('log_flavor_' + log.flavor )
-				.html( log.subject )
+				.addClass('log_flavor_' + task.logs[i].flavor )
+				.html( ripple.get_action_img( task.logs[i].flavor ) + task.logs[i].subject )
 				.appendTo( log_entry );
 		}
 
-		if ( log.body != "" ) {
+		if ( task.logs[i].body != "" ) {
+			log_entry
+				.css( 'cursor', 'pointer' )
+				.click( function() {
+					$( this ).children().not('.log_subject').toggle();
+				})
+				.attr( 'title', "click to show full text" );
 			$('<p>')
-				.addClass('log_body')
-				.addClass('log_flavor_' + log.flavor )
-				.html( log.body.replace( /\n/g, '<br />\n' ) )
+				.html( "..." )
+				.appendTo( log_entry );
+			$('<p>')
+				.addClass('log_body ui-helper-hidden log_flavor_' + task.logs[i].flavor )
+				.html( task.logs[i].body.replace( /\n/g, '<br />\n' ) )
 				.appendTo( log_entry );
 		}
-	});
+
+		if ( i != 0 )
+			log_entry.appendTo( task_element );
+		else
+			log_entry.prependTo( task_element );
+
+	};
 
 	taskInfo.children().hide();
 
@@ -225,16 +240,44 @@ ripple.pretty_datetime = function( datum ) {
 
 };
 
-ripple.add_action = function( task_id, action_id, accordion ) {
-	var content = '<textarea cols="12" rows="3" placeholder="Subject is first line or first 30 characters."></textarea>';
-	var tac = $('<div class="task_action_content">')
-		.html( content );
+ripple.get_action_img = function( action_id ) {
 	switch ( action_id ) {
 		case ripple.task_flavors.RLF_NOTE:
-			title_text = "add note";
+			return '<img class="action_img" src="note.png" />';
+		case ripple.task_flavors.RLF_FORWARDED:
+			return '<img class="action_img" src="forward.png" />';
+		case ripple.task_flavors.RLF_FEEDBACK:
+			return '<img class="action_img" src="feedback.png" />';
+		case ripple.task_flavors.RLF_DECLINED:
+			return '<img class="action_img" src="task.png" />';
+		case ripple.task_flavors.RLF_ACCEPTED:
+			return '<img class="action_img" src="accept.png" />';
+		case ripple.task_flavors.RLF_STARTED:
+			return '<img class="action_img" src="start.png" />';
+		case ripple.task_flavors.RLF_COMPLETED:
+			return '<img class="action_img" src="complete.png" />';
+		case ripple.task_flavors.RLF_REOPENED:
+			return '<img class="action_img" src="reopen.png" />';
+		case ripple.task_flavors.RLF_CLOSED:
+			return '<img class="action_img" src="close.png" />';
+		case ripple.task_flavors.RLF_CANCELED:
+			return '<img class="action_img" src="cancel.png" />';
+		default:
+			return '';
+	}
+}
+
+ripple.add_action = function( task_id, action_id, accordion ) {
+	var content = '<textarea cols="12" rows="3" placeholder="Subject is first line or first 30 characters."></textarea>';
+	var tac = $('<div class="task_action_content">').html( content );
+	switch ( action_id ) {
+		case ripple.task_flavors.RLF_NOTE:
+			var title_text = ripple.get_action_img( action_id ) + 'add note';
+			var button_text = "add";
 			break;
 		case ripple.task_flavors.RLF_FORWARDED:
-			title_text = "forward this task";
+			var title_text = ripple.get_action_img( action_id ) + 'forward this task';
+			var button_text = "forward";
 			$('<input type="text" class="forward_to" placeholder="forward to...">')
 				.autocomplete({
 					minLength: 1,
@@ -243,28 +286,36 @@ ripple.add_action = function( task_id, action_id, accordion ) {
 				.appendTo( tac );
 			break;
 		case ripple.task_flavors.RLF_FEEDBACK:
-			title_text = "request feedback";
+			var title_text = ripple.get_action_img( action_id ) + 'request feedback';
+			var button_text = "request";
 			break;
 		case ripple.task_flavors.RLF_DECLINED:
-			title_text = "decline task";
+			var title_text = ripple.get_action_img( action_id ) + 'decline task';
+			var button_text = "decline";
 			break;
 		case ripple.task_flavors.RLF_ACCEPTED:
-			title_text = "accept this task";
+			var title_text = ripple.get_action_img( action_id ) + 'accept this task';
+			var button_text = "accept";
 			break;
 		case ripple.task_flavors.RLF_STARTED:
-			title_text = "start working";
+			var title_text = ripple.get_action_img( action_id ) + 'start this task';
+			var button_text = "start";
 			break;
 		case ripple.task_flavors.RLF_COMPLETED:
-			title_text = "mark as complete";
+			var title_text = ripple.get_action_img( action_id ) + 'mark as complete';
+			var button_text = "complete";
 			break;
 		case ripple.task_flavors.RLF_REOPENED:
-			title_text = "reopen this task";
+			var title_text = ripple.get_action_img( action_id ) + 'reopen this task';
+			var button_text = "reopen";
 			break;
 		case ripple.task_flavors.RLF_CLOSED:
-			title_text = "close permanently";
+			var title_text = ripple.get_action_img( action_id ) + 'close permanently';
+			var button_text = "close";
 			break;
 		case ripple.task_flavors.RLF_CANCELED:
-			title_text = "cancel this task";
+			var title_text = ripple.get_action_img( action_id ) + 'cancel this task';
+			var button_text = "cancel";
 			break;
 		default:
 			throw "Invalid action: " + action_id;
@@ -276,8 +327,8 @@ ripple.add_action = function( task_id, action_id, accordion ) {
 		.appendTo( h3 );
 	tac.appendTo(accordion);
 	$('<input type="button" action="' + action_id +
-		'" task_id="' + task_id + 
-		'" value="' + title_text.substring( 0, title_text.indexOf( ' ' ) ) + '">')
+		'" task_id="' + task_id +
+		'" value="' + button_text  + '">')
 		.button()
 		.click( function() {
 			ripple.query( "do_action", { 

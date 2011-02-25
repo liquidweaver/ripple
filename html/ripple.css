@@ -99,8 +99,23 @@ p.log_subject.log_flavor_0 {
 	font-weight: bold;
 	text-shadow: 1px 1px 1px #666666;
 	display: block;
-	border-bottom: ridge;
+}
 
+div.log_flavor_1 {
+	border: 1px solid darkgrey;
+	background: lightgrey;
+	padding: .5em;
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	border-radius: 4px;
+	margin-top: .5em
+}
+p.log_subject.log_flavor_1 {
+	font-weight: bold;
+}
+
+div.log_body {
+	border-top: ridge;
 }
 
 div.task_info {
@@ -123,7 +138,7 @@ img.avatar {
 }
 
 img.action_img {
-	margin: .25em;
+	margin-right: .5em;
 }
 
 div.taskinfo_name {
