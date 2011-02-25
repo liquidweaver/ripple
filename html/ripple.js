@@ -22,8 +22,6 @@ ripple.task_flavors = {
 };
 
 ripple.change_view = function( page ) {
-	//stubbin
-	//watching assigned accepted stakeholder
 	var content = $('#content').html('');
 	$('<div>')
 		.attr( 'id', 'tasks' )
@@ -69,7 +67,7 @@ ripple.load_all_assigned_tasks = function() {
 			.html( '<legend class="ui-corner-all ui-widget-header task_region">you own</legend>' )
 			.show();
 		$.each( data, function( index, task ) { 
-			ripple.add_task( task );
+			ripple.process_task( task );
 		}); 
 		$('<div style="clear:both;">').appendTo("#assigned_tasks");
 		$('<div style="clear:both;">').appendTo("#stakeholder_tasks");
@@ -81,10 +79,26 @@ ripple.delete_task = function( task ) {
 	$( '#task_' + task.task_id ).fadeOut( 'slow' , function() { $( this ).remove(); });
 }
 
-ripple.add_task = function( task ) {
+ripple.process_task = function( task ) {
+	if ( $( '#task_' + task.task_id ).length ) {
+		var old_task = $( '#task_' +  task.task_id );
+		old_task.removeAttr( 'id' );
+		var new_task = ripple.generate_task_dom( task );
+		old_task.replaceWith( new_task );
+		new_task.show();
+	}
+	else if ( task.assigned == ripple.user_id )   
+		ripple.generate_task_dom( task ).prependTo('#assigned_tasks').fadeIn('slow');
+	else if ( task.stakeholder == ripple.user_id )
+		ripple.generate_task_dom( task ).prependTo('#stakeholder_tasks').fadeIn('slow');
+	else
+		ripple.delete_task( task );
+}
+
+ripple.generate_task_dom = function( task ) {
 	var task_container = $('<div>')
-		.addClass('task_container ui-helper-hidden ')
-		.attr( 'id', 'task_' + task.task_id );
+		.attr( 'id', 'task_' + task.task_id )
+		.addClass('task_container ui-helper-hidden ');
 	var task_element =  $('<div>')
 		.addClass('task ui-widget-content ui-corner-all ui-selectable shadow')
 		.appendTo( task_container );
@@ -172,14 +186,11 @@ ripple.add_task = function( task ) {
 				.html( log.body.replace( /\n/g, '<br />\n' ) )
 				.appendTo( log_entry );
 		}
-
-		taskInfo.children().hide();
-		if ( task.assigned == ripple.user_id )   
-			task_container.prependTo('#assigned_tasks');
-		else if ( task.stakeholder == ripple.user_id )
-			task_container.prependTo('#stakeholder_tasks');
-		task_container.fadeIn('slow');
 	});
+
+	taskInfo.children().hide();
+
+	return task_container;
 };
 
 ripple.pretty_datetime = function( datum ) {
@@ -335,7 +346,6 @@ ripple.parse_events = function( data ) {
 		if ( m[1] > ripple.event_sequence )
 			ripple.event_sequence = Number( m[1] );
 		var task = eval('(' + data.substr( event_rx.lastIndex, m[2]  ) + ')');
-		ripple.delete_task( task );
-		ripple.add_task( task );
+		ripple.process_task( task );
 	}
 }
