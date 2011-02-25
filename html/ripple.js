@@ -78,7 +78,7 @@ ripple.load_all_assigned_tasks = function() {
 
 ripple.delete_task = function( task ) {
 	//Remove if it exists.
-	$( '#' + task.task_id ).fadeOut( 'slow' , function() { $( this ).remove(); });
+	$( '#task_' + task.task_id ).fadeOut( 'slow' , function() { $( this ).remove(); });
 }
 
 ripple.add_task = function( task ) {
@@ -92,28 +92,31 @@ ripple.add_task = function( task ) {
 		.hover( function() {
 			$(this)
 				.css( 'z-index', 10 )
-				.addClass('task_info_content');
+				.addClass('task_info_content shadow');
 			$(this).children().show();
 			ripple.query( "get_possible_actions", { task_id: task.task_id }, function( data ) {
 				var task_actions = $( '#task_' + data.task_id + ' .task_actions' );
 				task_actions.html('');
 				var action_list = $('<div>');
 				for ( i=0; i < data.possible_actions.length; i++ ) {
-					ripple.add_action( data.possible_actions[i], action_list );
+					ripple.add_action( task.task_id, data.possible_actions[i], action_list );
 				}
 				action_list.accordion({ animated: false,
 												collapsible: true,
 												autoHeight: false,
 												active: false
 				});
+				action_list.children().css( 'readonly: false');
 				action_list.appendTo( task_actions );
 			});
 		},
-		function() {
-			$(this)
-				.css( 'z-index', '' )
-				.removeClass('task_info_content');
-			$(this).children().hide();
+		function( event ) {
+			if ( event.target == this ) { //win chrome bug fix
+				$(this)
+					.css( 'z-index', '' )
+					.removeClass('task_info_content shadow');
+				$(this).children().hide();
+			}
 		})
 		.appendTo( task_container );
 	if ( task.stakeholder_avatar )
@@ -211,14 +214,22 @@ ripple.pretty_datetime = function( datum ) {
 
 };
 
-ripple.add_action = function( action_id, accordian ) {
-	var content = '<textarea rows="3" cols="18"></textarea>'
+ripple.add_action = function( task_id, action_id, accordion ) {
+	var content = '<textarea cols="12" rows="3" placeholder="Subject is first line or first 30 characters."></textarea>';
+	var tac = $('<div class="task_action_content">')
+		.html( content );
 	switch ( action_id ) {
 		case ripple.task_flavors.RLF_NOTE:
 			title_text = "add note";
 			break;
 		case ripple.task_flavors.RLF_FORWARDED:
 			title_text = "forward this task";
+			$('<input type="text" class="forward_to" placeholder="forward to...">')
+				.autocomplete({
+					minLength: 1,
+					source: [ "Glenn", "Matt" ]
+				})
+				.appendTo( tac );
 			break;
 		case ripple.task_flavors.RLF_FEEDBACK:
 			title_text = "request feedback";
@@ -248,13 +259,30 @@ ripple.add_action = function( action_id, accordian ) {
 			throw "Invalid action: " + action_id;
 	}
 
-	var h3 = $('<h3>').appendTo( accordian );
+	var h3 = $('<h3>').appendTo( accordion );
 	$('<a href="#">')
 		.html( title_text )
 		.appendTo( h3 );
-	$('<div class="task_action_content">')
-		.html( content )
-		.appendTo(accordian);
+	tac.appendTo(accordion);
+	$('<input type="button" action="' + action_id +
+		'" task_id="' + task_id + 
+		'" value="' + title_text.substring( 0, title_text.indexOf( ' ' ) ) + '">')
+		.button()
+		.click( function() {
+			ripple.query( "do_action", { 
+					action: $( this ).attr( 'action' ), 
+					description: $( this ).siblings('textarea').val(),
+					task_id: $( this ).attr( 'task_id' ),
+					forwardee: $( this ).siblings().find('input').val()
+				}, function( data ) {
+					//TODO: Clean this up
+					if (data.error_msg != '' )
+						alert( data.error_msg );
+				}
+			);
+		})
+		.addClass( "action_button" )
+		.appendTo( tac );
 }
 
 ripple.refresh_profile = function() {

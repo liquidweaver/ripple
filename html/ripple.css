@@ -85,7 +85,6 @@ div.task {
 div.task_container {
 	float: left;
 	margin: 1em;
-	word-break: break-all;
 	position: relative
 }
 
@@ -150,7 +149,6 @@ legend.task_region {
 	margin-left: 1em;
 	font-size:1.2em;
 	text-shadow: 1px 1px 1px #666666;
-
 }
 
 img.avatar {
@@ -163,8 +161,14 @@ img.avatar {
 	border: groove;
 }
 
+
 div.task_action_content textarea {
-	font-size: .7em;
-	display: block;
-	width: 95%;
+	font-size: .8em;
+	width: 90%
+}
+
+
+div.task_action_content input {
+	font-size: .8em;
+	width: 95%
 }

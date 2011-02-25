@@ -390,6 +390,67 @@ void RippleInterface::query( struct mg_connection *conn,
 
   try {
     if ( method != "" ) {
+	 	if ( method == "do_action" ) {
+			try {
+				RIPPLE_LOG_FLAVOR action =
+					static_cast<RIPPLE_LOG_FLAVOR>( atoi( get_post_var( post_data, "action" ).c_str() ) );
+				string description = get_post_var( post_data, "description" );
+				int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
+				RippleTask task;
+
+				ripple->GetTask( task_id, task );
+				cout << "action: " << action
+					<< " task_id: " << task_id
+					<< " description: " << description
+					<< endl;
+
+				switch( action ) {
+					case RLF_NOTE:
+						ripple->AddNoteToTask( task, user, description );
+						break;
+					case RLF_FORWARDED:
+						{ 
+							RippleUser forwardee;
+							int forwardee_id = atoi( get_post_var( post_data, "fowardee_id" ).c_str() );
+							ripple->GetUser( forwardee_id, forwardee );
+							ripple->ForwardTask( task, user, forwardee, description );
+						}
+						break;
+					case RLF_FEEDBACK:
+						//TODO: Stub
+						throw logic_error( "Not implemented!" );
+						break;
+					case RLF_DECLINED:
+						ripple->DeclineTask( task, user, description );
+						break;
+					case RLF_ACCEPTED:
+						ripple->AcceptTask( task, user, description );
+						break;
+					case RLF_STARTED:
+						ripple->StartTask( task, user, description );
+						break;
+					case RLF_COMPLETED:
+						ripple->CompleteTask( task, user, description );
+						break;
+					case RLF_REOPENED:
+						ripple->ReOpenTask( task, user, description );
+						break;
+					case RLF_CLOSED:
+						//TODO: stub
+						throw logic_error( "Not implemented!" );
+						break;
+					case RLF_CANCELED:
+						ripple->CancelTask( task, user, description );
+						break;
+					default:
+						throw runtime_error( "invalid action requested" );
+				}
+				mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
+			}
+			catch ( exception& e ) {
+				mg_printf( conn, "%s{ \"error_msg\": \"%s\" }", ajax_reply_start, e.what() );
+			}
+		}
 	 	if ( method == "update_my_user" ) {
 			RippleUser new_user( user );
 			string name = get_post_var( post_data, "name" );

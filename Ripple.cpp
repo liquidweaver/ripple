@@ -363,7 +363,7 @@ void Ripple::AddNoteToTask( const RippleTask& task, const RippleUser& requestor,
 	if ( description == "" )
 		throw RippleException( "Note must have some content." );
 	RippleLog log( requestor, task, RLF_NOTE, description );
-	InsertLog( log );
+	UpdateTask( task, log );
 }
 
 void Ripple::GetPossibleActions( const RippleTask& task, const RippleUser& requestor, map<RIPPLE_LOG_FLAVOR, string>& actions ) {
