@@ -114,9 +114,12 @@ void Ripple::Release() {
 
 }
 
-Ripple::Ripple() {
-	sql.open( backEnd, "ripple.db"  );
-	sql << "PRAGMA foreign_keys = ON";
+Ripple::Ripple() : pool( DB_POOL_SIZE ) {
+	for ( size_t i = 0; i != DB_POOL_SIZE; ++i ) {
+		session& sql = pool.at(i);
+		sql.open( backEnd, "ripple.db"  );
+		sql << "PRAGMA foreign_keys = ON";
+	}
 
 	KnownFlavors.push_back( RLF_CREATED );
 	KnownFlavors.push_back( RLF_NOTE );
@@ -143,6 +146,7 @@ void Ripple::InsertUser( RippleUser& ru ) {
 	if ( ru.password == "UNSET" || ru.password == "" )
 		throw RippleException( "Password must be specified." );
 	
+	soci::session sql( pool );
 
 	sql << "INSERT INTO users VALUES (:user_id, :name, :email, :password, :avatar_file)",
 		 use( static_cast<const RippleUser&>( ru ) );
@@ -154,10 +158,10 @@ void Ripple::InsertUser( RippleUser& ru ) {
 }
 
 void Ripple::GetUser( int user_id, RippleUser& user ) {
-	RippleUser ru;
 	indicator ind;
 	if ( user_id < 1 )
 		throw RippleException( "invalid user_id" );
+	soci::session sql( pool );
 	sql << "SELECT * FROM users WHERE user_id=:user_id",
 		 into( user, ind ), use( user_id );
 
@@ -169,12 +173,14 @@ void Ripple::GetUsers( vector<int>& user_ids ) {
 	user_ids.clear();
 	user_ids.resize( 500 );
 	
+	soci::session sql( pool );
 	sql << "SELECT user_id FROM users",
 		into( user_ids );
 }
 
 void Ripple::UpdateUser( const RippleUser& user ) {
 
+	soci::session sql( pool );
 	sql << "UPDATE users SET name=:name, email=:email," 
 			<< "password=:password, avatar_file=:avatar_file WHERE user_id=:user_id",
 		use( user );
@@ -184,6 +190,7 @@ void Ripple::UpdateUser( const RippleUser& user ) {
 RippleUser Ripple::GetUserFromEmailAndPassword( const string& email, const string& password ) {
 	RippleUser ru;
 	indicator ind;
+	soci::session sql( pool );
 	sql << "SELECT * FROM users WHERE email=:email AND password=:password",
 				into(ru, ind ), use( email ), use( password );
 
@@ -199,6 +206,7 @@ void Ripple::DeleteUser( RippleUser& user ) {
 }
 
 void Ripple::DeleteUser( int user_id ) {
+	soci::session sql( pool );
 	sql << "DELETE FROM users WHERE user_id=:user_id",
 		use( user_id );
 
@@ -211,20 +219,21 @@ void Ripple::DeleteUser( int user_id ) {
 RippleTask Ripple::CreateTask( const RippleUser& ru, const string& description, std::time_t start, std::time_t due ) {
 	if ( Blank( description ) )
 		throw RippleException( "You must enter a description when creating a task." );
+	soci::session sql( pool );
 	transaction tr(sql);
 
 	RippleTask rt( ru );
 	rt.start_date = start;
 	rt.due_date = due;
-	InsertTask( rt );
+	InsertTask( rt, &sql );
 
 	RippleLog rl( ru, rt, RLF_CREATED, description );
-	InsertLog( rl );
+	InsertLog( rl, &sql );
 
 	stringstream task_data, user_id;
+	tr.commit();
 	task_data << rt;
 	user_id << rt.assigned;
-	tr.commit();
 	rc->SubmitEvent( user_id.str(), task_data.str() );
 	if ( rt.assigned != rt.stakeholder ) {
 		user_id << rt.stakeholder;
@@ -237,6 +246,7 @@ RippleTask Ripple::CreateTask( const RippleUser& ru, const string& description, 
 void Ripple::GetTask( int task_id, RippleTask& task ) {
 	assert( task_id > 0 );
 
+	soci::session sql( pool );
 	sql << "SELECT * FROM tasks WHERE task_id=:task_id",
 		into( task ), use( task_id );
 	
@@ -244,21 +254,21 @@ void Ripple::GetTask( int task_id, RippleTask& task ) {
 		throw RippleException( "Task not found." );
 }
 
-void Ripple::GetUsersTasks( int user_id, vector<int>& tasks, bool accepted ) {
+void Ripple::GetUsersTasks( int user_id, vector<int>& tasks ) {
 	assert( user_id > 0 );
 	tasks.resize( 200 );
 
-	int begin = accepted ? RTS_ACCEPTED : RTS_OPEN;
-	int end = accepted ? RTS_CLOSED : RTS_ACCEPTED;
 
-	sql << "SELECT task_id FROM tasks WHERE ( assigned=:a_user_id OR stakeholder=:s_user_id ) AND state >= :begin AND state < :end",
-		 into( tasks ), use( user_id ), use( user_id ), use( begin ), use( end );
+	soci::session sql( pool );
+	sql << "SELECT task_id FROM tasks WHERE ( assigned=:a_user_id OR stakeholder=:s_user_id ) AND state < :end",
+		 into( tasks ), use( user_id ), use( user_id ), use( static_cast<int>( RTS_CLOSED ) );
 }
 
 void Ripple::GetLogsForTask( const RippleTask& task, vector<int>& logs ) {
 	logs.clear();
 	logs.resize( 500 );
 	
+	soci::session sql( pool );
 	sql << "SELECT log_id FROM logs WHERE task_id=:task_id",
 		into( logs ), use( task.task_id );
 	
@@ -268,6 +278,7 @@ void Ripple::GetLogsForTask( const RippleTask& task, vector<int>& logs ) {
 
 void Ripple::GetLog( int log_id, RippleLog& log ) {
 
+	soci::session sql( pool );
 	sql << "SELECT * FROM logs WHERE log_id=:log_id",
 			into( log ), use( log_id );
 
@@ -510,6 +521,8 @@ string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor,
 		case RLF_CANCELED:
 			if (!task.IsStakeHolder( requestor ) )
 				return string( "You must be the stakeholder of a task to cancel it." );
+			if ( task.state >= RTS_COMPLETED )
+				return string( "Task must be less the complete to cancel - do you want to close it?" );
 			break;
 		case RLF_CLOSED:
 			if (!task.IsStakeHolder( requestor ) )
@@ -541,6 +554,7 @@ void Ripple::GetLinearizedAssignmentHistory( const RippleTask& task, vector<int>
 	history.clear();
 	history.push_back( task.stakeholder );
 
+	soci::session sql( pool );
 	rowset<row> rs = (sql.prepare 
 			<< "SELECT DISTINCT user_id FROM logs "
 			<< "WHERE task_id=:task_id AND user_id <> :user_id ORDER BY created_date",
@@ -555,31 +569,63 @@ void Ripple::GetLinearizedAssignmentHistory( const RippleTask& task, vector<int>
 		history.push_back( task.assigned );
 }
 
-void Ripple::InsertTask( RippleTask& task ) {
+void Ripple::InsertTask( RippleTask& task, soci::session* sql = NULL ) {
 
-	sql << "INSERT INTO tasks VALUES ("
-		<< ":task_id, :stakeholder, :assigned, :start_date,"
-		<<" :due_date, :state, :parent_task)",
-		use( static_cast<const RippleTask&>( task ) );
+	bool own = false;
+	if ( sql == NULL )  {
+		own = true;
+		sql = new soci::session( pool );
+	}
+	try {
+		*sql << "INSERT INTO tasks VALUES ("
+			<< ":task_id, :stakeholder, :assigned, :start_date,"
+			<<" :due_date, :state, :parent_task)",
+			use( static_cast<const RippleTask&>( task ) );
 
-	sql << "SELECT last_insert_rowid()", into( task.task_id );
+		*sql << "SELECT last_insert_rowid()", into( task.task_id );
+	}
+	catch ( ... ) {
+		if ( own )
+			delete sql;
+		throw;
+	}
+	if ( own )
+		delete sql;
+
+
 
 }
 
-void Ripple::InsertLog( RippleLog& log ) {
+void Ripple::InsertLog( RippleLog& log, soci::session* sql = NULL ) {
 
 	if ( log.description.length() > 4096 )
 		throw RippleException( "log entry must not exceed 4k characters" );
-	sql << "INSERT INTO logs VALUES("
-		<< ":log_id, :flavor, :description, :user_id, :task_id,"
-		<< ":created_date)",
-		use( static_cast<const RippleLog&>( log ) );
 
-	sql << "SELECT last_insert_rowid()", into( log.log_id );
+	bool own = false;
+	if ( sql == NULL )  {
+		own = true;
+		sql = new soci::session( pool );
+	}
+	try {
+		*sql << "INSERT INTO logs VALUES("
+			<< ":log_id, :flavor, :description, :user_id, :task_id,"
+			<< ":created_date)",
+			use( static_cast<const RippleLog&>( log ) );
+
+		*sql << "SELECT last_insert_rowid()", into( log.log_id );
+	}
+	catch ( ... ) {
+		if ( own )
+			delete sql;
+		throw;
+	}
+	if ( own )
+		delete sql;
 }
 
 void Ripple::UpdateTask( const RippleTask& task, RippleLog& log, int previously_assigned ) {
 
+	soci::session sql( pool );
 	transaction tr(sql);
 	sql << "UPDATE tasks SET "
 		<< "stakeholder=:stakeholder, assigned=:assigned, start_date=:start_date, "
@@ -587,7 +633,7 @@ void Ripple::UpdateTask( const RippleTask& task, RippleLog& log, int previously_
 		<< "WHERE task_id=:task_id",
 		use( task );
 
-	InsertLog( log );
+	InsertLog( log, &sql );
 	tr.commit();
 
 	stringstream task_data, user_id;

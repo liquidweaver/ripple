@@ -390,180 +390,181 @@ void RippleInterface::query( struct mg_connection *conn,
 
   try {
     if ( method != "" ) {
-	 	if ( method == "do_action" ) {
-			try {
-				RIPPLE_LOG_FLAVOR action =
-					static_cast<RIPPLE_LOG_FLAVOR>( atoi( get_post_var( post_data, "action" ).c_str() ) );
-				string description = get_post_var( post_data, "description" );
-				int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
-				RippleTask task;
+		 if ( method == "do_action" ) {
+			 try {
+				 RIPPLE_LOG_FLAVOR action =
+					 static_cast<RIPPLE_LOG_FLAVOR>( atoi( get_post_var( post_data, "action" ).c_str() ) );
+				 string description = get_post_var( post_data, "description" );
+				 int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
+				 RippleTask task;
 
-				ripple->GetTask( task_id, task );
-				cout << "action: " << action
-					<< " task_id: " << task_id
-					<< " description: " << description
-					<< endl;
+				 ripple->GetTask( task_id, task );
+				 cout << "action: " << action
+					 << " task_id: " << task_id
+					 << " description: " << description
+					 << endl;
 
-				switch( action ) {
-					case RLF_NOTE:
-						ripple->AddNoteToTask( task, user, description );
-						break;
-					case RLF_FORWARDED:
-						{ 
-							RippleUser forwardee;
-							int forwardee_id = atoi( get_post_var( post_data, "forwardee_id" ).c_str() );
-							cout << "forwardee_id: " << forwardee_id << endl;
-							ripple->GetUser( forwardee_id, forwardee );
-							ripple->ForwardTask( task, user, forwardee, description );
-						}
-						break;
-					case RLF_FEEDBACK:
-						ripple->RequestFeedback( task, user, description );
-						break;
-					case RLF_DECLINED:
-						ripple->DeclineTask( task, user, description );
-						break;
-					case RLF_ACCEPTED:
-						ripple->AcceptTask( task, user, description );
-						break;
-					case RLF_STARTED:
-						ripple->StartTask( task, user, description );
-						break;
-					case RLF_COMPLETED:
-						ripple->CompleteTask( task, user, description );
-						break;
-					case RLF_REOPENED:
-						ripple->ReOpenTask( task, user, description );
-						break;
-					case RLF_CLOSED:
-						ripple->CloseTask( task, user, description );
-						break;
-					case RLF_CANCELED:
-						ripple->CancelTask( task, user, description );
-						break;
-					default:
-						throw runtime_error( "invalid action requested" );
-				}
-				mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
-			}
-			catch ( exception& e ) {
-				mg_printf( conn, "%s{ \"error_msg\": \"%s\" }", ajax_reply_start, e.what() );
-			}
-		}
-	 	if ( method == "update_my_user" ) {
-			RippleUser new_user( user );
-			string name = get_post_var( post_data, "name" );
-			string email = get_post_var( post_data, "email" );
-			string password = get_post_var( post_data, "password" );
+				 switch( action ) {
+					 case RLF_NOTE:
+						 ripple->AddNoteToTask( task, user, description );
+						 break;
+					 case RLF_FORWARDED:
+						 { 
+							 RippleUser forwardee;
+							 int forwardee_id = atoi( get_post_var( post_data, "forwardee_id" ).c_str() );
+							 cout << "forwardee_id: " << forwardee_id << endl;
+							 ripple->GetUser( forwardee_id, forwardee );
+							 ripple->ForwardTask( task, user, forwardee, description );
+						 }
+						 break;
+					 case RLF_FEEDBACK:
+						 ripple->RequestFeedback( task, user, description );
+						 break;
+					 case RLF_DECLINED:
+						 ripple->DeclineTask( task, user, description );
+						 break;
+					 case RLF_ACCEPTED:
+						 ripple->AcceptTask( task, user, description );
+						 break;
+					 case RLF_STARTED:
+						 ripple->StartTask( task, user, description );
+						 break;
+					 case RLF_COMPLETED:
+						 ripple->CompleteTask( task, user, description );
+						 break;
+					 case RLF_REOPENED:
+						 ripple->ReOpenTask( task, user, description );
+						 break;
+					 case RLF_CLOSED:
+						 ripple->CloseTask( task, user, description );
+						 break;
+					 case RLF_CANCELED:
+						 ripple->CancelTask( task, user, description );
+						 break;
+					 default:
+						 throw runtime_error( "invalid action requested" );
+				 }
+				 mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
+			 }
+			 catch ( exception& e ) {
+				 mg_printf( conn, "%s{ \"error_msg\": \"%s\" }", ajax_reply_start, e.what() );
+			 }
+		 }
+		 if ( method == "update_my_user" ) {
+			 RippleUser new_user( user );
+			 string name = get_post_var( post_data, "name" );
+			 string email = get_post_var( post_data, "email" );
+			 string password = get_post_var( post_data, "password" );
 
-			if ( name != "" )
-				new_user.name = name;
-			if ( email != "" )
-				new_user.email = email;
-			if ( password != "" )
-				new_user.password = password;
+			 if ( name != "" )
+				 new_user.name = name;
+			 if ( email != "" )
+				 new_user.email = email;
+			 if ( password != "" )
+				 new_user.password = password;
 
-			ripple->UpdateUser( new_user );
-		}
-	 	if ( method == "get_user" ) {
-			int user_id = atoi( get_post_var( post_data, "user_id" ).c_str() );
-			if ( user_id == 0 )
-				throw runtime_error( "getuser: no user_id" );
+			 ripple->UpdateUser( new_user );
+		 }
+		 if ( method == "get_user" ) {
+			 int user_id = atoi( get_post_var( post_data, "user_id" ).c_str() );
+			 if ( user_id == 0 )
+				 throw runtime_error( "getuser: no user_id" );
 
-			RippleUser ru;
-			ripple->GetUser( user_id, ru );
-			stringstream user_serialized;
-			user_serialized << ru;
-			
-			mg_printf( conn, "%s%s", ajax_reply_start, user_serialized.str().c_str() );
-		}
-		if ( method == "get_users" ) {
-			vector<int> user_ids;
+			 RippleUser ru;
+			 ripple->GetUser( user_id, ru );
+			 stringstream user_serialized;
+			 user_serialized << ru;
 
-			ripple->GetUsers( user_ids );
+			 mg_printf( conn, "%s%s", ajax_reply_start, user_serialized.str().c_str() );
+		 }
+		 if ( method == "get_users" ) {
+			 vector<int> user_ids;
 
-			stringstream json;
-			json << "{ \"users\": [";
-			for ( vector<int>::const_iterator user_id = user_ids.begin();
-					user_id != user_ids.end(); ++user_id ) {
-				RippleUser user;
-				ripple->GetUser( *user_id, user );
-				json << user;
-				if ( user_id + 1 != user_ids.end() ) 
-					json << ',';
-			}
-			json << "]}";
+			 ripple->GetUsers( user_ids );
 
-			mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
-		}
-	 	if ( method == "create_task" ) {
-			string description = get_post_var( post_data, "description" );
-			string start_date = get_post_var( post_data, "start_date" );
-			string due_date = get_post_var( post_data, "due_date" );
-			cout << "New task - start_date: " << start_date
-					<< " due_date: " << due_date
-					<< " description: " << description << endl;
-			time_t t_start_date = start_date == "" ? -1 : atoi( start_date.c_str() );
-			time_t t_due_date = due_date == "" ? -1 : atoi( due_date.c_str() );
-			try {
-				ripple->CreateTask( user, description, t_start_date, t_due_date ); 
+			 stringstream json;
+			 json << "{ \"users\": [";
+			 for ( vector<int>::const_iterator user_id = user_ids.begin();
+					 user_id != user_ids.end(); ++user_id ) {
+				 RippleUser user;
+				 ripple->GetUser( *user_id, user );
+				 json << user;
+				 if ( user_id + 1 != user_ids.end() ) 
+					 json << ',';
+			 }
+			 json << "]}";
 
-				mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
-			}
-			catch ( exception& e ) {
-				mg_printf( conn, "%s{ \"error_msg\":\"%s\" }", ajax_reply_start, e.what() );
-			}
-		}
-      if ( method == "get_my_tasks" ) {
-        vector<int> task_ids;
-        ripple->GetUsersTasks( user.user_id, task_ids, false );
+			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+		 }
+		 if ( method == "create_task" ) {
+			 string description = get_post_var( post_data, "description" );
+			 string start_date = get_post_var( post_data, "start_date" );
+			 string due_date = get_post_var( post_data, "due_date" );
+			 cout << "New task - start_date: " << start_date
+				 << " due_date: " << due_date
+				 << " description: " << description << endl;
+			 time_t t_start_date = start_date == "" ? -1 : atoi( start_date.c_str() );
+			 time_t t_due_date = due_date == "" ? -1 : atoi( due_date.c_str() );
+			 try {
+				 ripple->CreateTask( user, description, t_start_date, t_due_date ); 
 
-        if ( task_ids.size() > 0 ) {
-          stringstream json;
-          json << '[';
-          for  ( vector<int>::const_iterator task_id = task_ids.begin(); task_id != task_ids.end(); ++task_id ) {
-				 RippleTask rt;
-				 ripple->GetTask( *task_id, rt );
-				 json << rt;
+				 mg_printf( conn, "%s{ \"error_msg\":\"\" }", ajax_reply_start );
+			 }
+			 catch ( exception& e ) {
+				 mg_printf( conn, "%s{ \"error_msg\":\"%s\" }", ajax_reply_start, e.what() );
+			 }
+		 }
+		 if ( method == "get_my_tasks" ) {
+			 vector<int> task_ids;
+			 ripple->GetUsersTasks( user.user_id, task_ids );
 
+			 stringstream json;
+			 json << "{ \"tasks\": [";
+			 for  ( vector<int>::const_iterator task_id = task_ids.begin(); task_id != task_ids.end(); ++task_id ) {
+				 json << *task_id;
 				 if ( task_id + 1 != task_ids.end() )
 					 json << ',';
+			 }
+			 json << "]}";
+
+			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+		 }
+
+		 if ( method == "get_task" ) {
+			 int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
+			 RippleTask task;
+			 ripple->GetTask( task_id, task );
+
+			 stringstream json;
+			 json << "{ \"task\":" << task << "}";
+
+			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+		 }
+		 if ( method == "get_possible_actions" ) {
+			 stringstream json;
+
+			 int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
+			 RippleTask rt;
+			 ripple->GetTask( task_id, rt );
+			 json << "{\"task_id\":" << task_id << ",\"possible_actions\":[";
+
+			 map<RIPPLE_LOG_FLAVOR, string> actions;
+			 ripple->GetPossibleActions( rt, user, actions );
+			 bool first = true;
+			 for( map<RIPPLE_LOG_FLAVOR, string>::const_iterator action = actions.begin();
+					 action != actions.end(); ++action ) {
+				 if ( action->second == "" ) {
+					 if ( first ) 
+						 first = false;
+					 else
+						 json << ',';
+					 json << action->first;
 				 }
-				 json << ']';
+			 }
 
-				 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
-        }
-        else {
-          mg_printf( conn, "%s[]", ajax_reply_start );
-         }
-       
-      }
-
-		if ( method == "get_possible_actions" ) {
-			stringstream json;
-			
-			int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
-			RippleTask rt;
-			ripple->GetTask( task_id, rt );
-			json << "{\"task_id\":" << task_id << ",\"possible_actions\":[";
-
-			map<RIPPLE_LOG_FLAVOR, string> actions;
-			ripple->GetPossibleActions( rt, user, actions );
-			bool first = true;
-			for( map<RIPPLE_LOG_FLAVOR, string>::const_iterator action = actions.begin();
-					action != actions.end(); ++action ) {
-				if ( action->second == "" ) {
-					if ( first ) 
-						first = false;
-					else
-						json << ',';
-					json << action->first;
-				}
-			}
-
-			json << "]}";  
-			mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
-		}
+			 json << "]}";  
+			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+		 }
     }
     else {
       throw runtime_error( "Invalid query." );

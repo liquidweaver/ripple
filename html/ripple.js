@@ -21,6 +21,15 @@ ripple.task_flavors = {
 	RLF_CANCELED:10
 };
 
+ripple.task_states = {
+	RTS_OPEN:0,
+	RTS_ACCEPTED:1,
+	RTS_STARTED:2,
+	RTS_COMPLETED:3,
+	RTS_CLOSED:4, //positive confirmation
+	RTS_CANCELED:5
+}
+
 ripple.change_view = function( page ) {
 	var content = $('#content').html('');
 	$('<div>')
@@ -66,8 +75,10 @@ ripple.load_all_assigned_tasks = function() {
 		$("#stakeholder_tasks")
 			.html( '<legend class="ui-corner-all ui-widget-header task_region">you own</legend>' )
 			.show();
-		$.each( data, function( index, task ) { 
-			ripple.process_task( task );
+		$.each( data.tasks, function( index, task ) { 
+			ripple.query( 'get_task', { task_id: task }, function( data ) {
+				ripple.process_task( data.task );
+			});
 		}); 
 		$('<div style="clear:both;">').appendTo("#assigned_tasks");
 		$('<div style="clear:both;">').appendTo("#stakeholder_tasks");
@@ -80,7 +91,9 @@ ripple.delete_task = function( task ) {
 }
 
 ripple.process_task = function( task ) {
-	if ( task.assigned == ripple.user_id ) {
+	if ( task.state >= ripple.task_states.RTS_CLOSED )
+		ripple.delete_task( task );
+	else if ( task.assigned == ripple.user_id ) {
 		if ( $( '#assigned_tasks #task_' + task.task_id ).length ) 
 			ripple.update_task( task );
 		else {
@@ -115,6 +128,8 @@ ripple.generate_task_dom = function( task ) {
 	var task_element =  $('<div>')
 		.addClass('task ui-widget-content ui-corner-all ui-selectable shadow')
 		.appendTo( task_container );
+	if ( task.state == 0 && task.stakeholder != ripple.user_id )
+		task_element.addClass( 'need_attention' );
 	var taskInfo = $('<div class="task_info ui-widget-header ui-corner-right ">')
 		.css( 'cursor', 'pointer' )
 		.click( function( event ) {
@@ -494,4 +509,8 @@ ripple.load_user_lists = function() {
 				width: '8em'
 			});
 	});
+}
+
+ripple.get_attention = function() {
+	$('.need_attention').effect( 'highlight', {}, 3000 );
 }

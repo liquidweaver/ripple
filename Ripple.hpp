@@ -7,6 +7,7 @@
 #include "RippleException.hpp"
 #include "restcomet/restcomet.h"
 #include <soci/soci.h>
+#define DB_POOL_SIZE 20
 
 #ifndef EVENTS_PORT
 	#define EVENTS_PORT 8081
@@ -30,7 +31,7 @@ class Ripple {
 
 		RippleTask CreateTask( const RippleUser& ru, const string& subject_and_body, std::time_t start = -1, std::time_t due = -1 );
 		void GetTask( int task_id, RippleTask& task );
-		void GetUsersTasks( int user_id, vector<int>& tasks, bool includeAccepted = true );
+		void GetUsersTasks( int user_id, vector<int>& tasks );
 		void GetLogsForTask( const RippleTask& task, vector<int>& logs );
 		void GetLog( int log_id, RippleLog& log );
 
@@ -62,7 +63,7 @@ class Ripple {
 	private:
 		static Ripple* instance;
 		Ripple();
-		Ripple( const Ripple& ripple ) { throw logic_error( "not allowed" ); }
+		Ripple( const Ripple& ripple ) : pool( DB_POOL_SIZE ) { throw logic_error( "not allowed" ); }
 		Ripple operator=( const Ripple& ripple ) { throw logic_error( "not allowed" ); }
 		static bool Blank( const string& str );
 
@@ -90,11 +91,11 @@ class Ripple {
 		 */
 		void GetLinearizedAssignmentHistory( const RippleTask& task, vector<int>& history  );
 
-		void InsertTask( RippleTask& task );
-		void InsertLog( RippleLog& log );
+		void InsertTask( RippleTask& task, soci::session* sql  );
+		void InsertLog( RippleLog& log, soci::session* sql  );
 		void UpdateTask( const RippleTask& task, RippleLog& log, int previously_assigned = -1 );
 
-		soci::session sql;
+		soci::connection_pool pool;
 		rc::restcomet* rc;
 };
 #endif//RIPPLE_H
