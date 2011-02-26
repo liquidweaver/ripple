@@ -60,7 +60,8 @@
 #define NO_CGI // WinCE has no pipes
 
 typedef long off_t;
-#define BUFSIZ  4096
+//2 MB buffer; should be total overkill
+#define BUFSIZ 2097152
 
 #define errno   GetLastError()
 #define strerror(x)  _ultoa(x, (char *) _alloca(sizeof(x) *3 ), 10)

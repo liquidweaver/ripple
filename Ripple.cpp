@@ -33,8 +33,16 @@ std::ostream& operator<<(std::ostream& out, const RippleLog& log ) {
 		<< '"' << "subject" <<  "\":\"" << JSON::escape( log.Subject() ) << '"' << ','
 		<< '"' << "user_id" << "\":"  << log.user_id << ','
 		<< '"' << "task_id" << "\":" << log.task_id << ','
-		<< '"' << "created_date" << "\":\"" << JSON::rfc3339( log.created_date ) << '"'
-		<< '}';
+		<< '"' << "created_date" << "\":\"" << JSON::rfc3339( log.created_date ) << '"';
+		try { 
+			RippleUser user;
+			Ripple::instance->GetUser( log.user_id, user );
+			out << ",\"" << "user_name\":\"" << JSON::escape( user.name ) << "\"";
+			if ( user.avatar_file != "" ) 
+				out << ",\"user_avatar\":\"" << JSON::escape( user.avatar_file ) << "\"";
+		}
+		catch ( ... ) { }
+		out << '}';
 
 	return out;
 }
@@ -146,14 +154,23 @@ void Ripple::InsertUser( RippleUser& ru ) {
 }
 
 void Ripple::GetUser( int user_id, RippleUser& user ) {
-	assert( user_id > 0 );
 	RippleUser ru;
 	indicator ind;
+	if ( user_id < 1 )
+		throw RippleException( "invalid user_id" );
 	sql << "SELECT * FROM users WHERE user_id=:user_id",
 		 into( user, ind ), use( user_id );
 
 	if ( !sql.got_data() ) 
 		throw RippleException( "User not found." );
+}
+
+void Ripple::GetUsers( vector<int>& user_ids ) {
+	user_ids.clear();
+	user_ids.resize( 500 );
+	
+	sql << "SELECT user_id FROM users",
+		into( user_ids );
 }
 
 void Ripple::UpdateUser( const RippleUser& user ) {
@@ -192,7 +209,7 @@ void Ripple::DeleteUser( int user_id ) {
 }
 
 RippleTask Ripple::CreateTask( const RippleUser& ru, const string& description, std::time_t start, std::time_t due ) {
-	if ( description == "" )
+	if ( Blank( description ) )
 		throw RippleException( "You must enter a description when creating a task." );
 	transaction tr(sql);
 
@@ -227,15 +244,15 @@ void Ripple::GetTask( int task_id, RippleTask& task ) {
 		throw RippleException( "Task not found." );
 }
 
-void Ripple::GetUsersAssignedTasks( int user_id, vector<int>& tasks, bool accepted ) {
+void Ripple::GetUsersTasks( int user_id, vector<int>& tasks, bool accepted ) {
 	assert( user_id > 0 );
 	tasks.resize( 200 );
 
 	int begin = accepted ? RTS_ACCEPTED : RTS_OPEN;
 	int end = accepted ? RTS_CLOSED : RTS_ACCEPTED;
 
-	sql << "SELECT task_id FROM tasks WHERE assigned=:user_id AND state >= :begin AND state < :end",
-		 into( tasks ), use( user_id ), use( begin ), use( end );
+	sql << "SELECT task_id FROM tasks WHERE ( assigned=:a_user_id OR stakeholder=:s_user_id ) AND state >= :begin AND state < :end",
+		 into( tasks ), use( user_id ), use( user_id ), use( begin ), use( end );
 }
 
 void Ripple::GetLogsForTask( const RippleTask& task, vector<int>& logs ) {
@@ -264,12 +281,13 @@ void Ripple::ReOpenTask( RippleTask& task, const RippleUser& requestor, const st
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
-	if ( reason == "" )
+	if ( Blank( reason ) )
 		throw RippleException( "You must enter a reason when reopening a task." );
+	int previously_assigned = task.assigned;
 	task.assigned = task.stakeholder; //Reset assigned to stakeholder
 	task.state = RTS_OPEN;
 	RippleLog log( requestor, task, RLF_REOPENED, reason );
-	UpdateTask( task, log );
+	UpdateTask( task, log, previously_assigned );
 }
 
 void Ripple::CancelTask( RippleTask& task, const RippleUser& requestor, const string& reason ) {
@@ -277,12 +295,13 @@ void Ripple::CancelTask( RippleTask& task, const RippleUser& requestor, const st
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
-	if ( reason == "" )
+	if ( Blank( reason ) )
 		throw RippleException( "You must enter a reason when canceling a task." );
+	int previously_assigned = task.assigned;
 	task.assigned = task.stakeholder; //Reset assigned to stakeholder
 	task.state = RTS_CANCELED;
 	RippleLog log( requestor, task, RLF_CANCELED, reason );
-	UpdateTask( task, log );
+	UpdateTask( task, log, previously_assigned );
 }
 
 void Ripple::AcceptTask( RippleTask& task, const RippleUser& requestor, string reason ) {
@@ -300,9 +319,13 @@ void Ripple::ForwardTask( RippleTask& task, const RippleUser& requestor, const R
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
+	if ( requestor.user_id == target.user_id )
+		throw RippleException( "you cannot forward a task to yourself" );
+
+	int previously_assigned = task.assigned;
 	task.assigned = target.user_id;
 	RippleLog log( requestor, task, RLF_FORWARDED, reason );
-	UpdateTask( task, log );
+	UpdateTask( task, log, previously_assigned );
 }
 
 void Ripple::RequestFeedback( RippleTask& task, const RippleUser& requestor, const string& reason ) {
@@ -310,11 +333,12 @@ void Ripple::RequestFeedback( RippleTask& task, const RippleUser& requestor, con
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
-	if ( reason == "" )
+	if ( Blank( reason ) )
 		throw RippleException( "You must enter a reason when requesting feedback for a task." );
+	int previously_assigned = task.assigned;
 	task.assigned = GetLastAssigned( task );
 	RippleLog log( requestor, task, RLF_FEEDBACK, reason );
-	UpdateTask( task, log );
+	UpdateTask( task, log, previously_assigned );
 }
 
 void Ripple::DeclineTask( RippleTask& task, const RippleUser& requestor, const string& reason ) {
@@ -322,11 +346,12 @@ void Ripple::DeclineTask( RippleTask& task, const RippleUser& requestor, const s
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
-	if ( reason == "" )
+	if ( Blank( reason ) )
 		throw RippleException( "You must enter a reason when requesting declining a task." );
+	int previously_assigned = task.assigned;
 	task.assigned = GetLastAssigned( task );
 	RippleLog log( requestor, task, RLF_DECLINED, reason );
-	UpdateTask( task, log );
+	UpdateTask( task, log, previously_assigned );
 }
 
 void Ripple::StartTask( RippleTask& task, const RippleUser& requestor, string reason ) {
@@ -344,6 +369,7 @@ void Ripple::CompleteTask( RippleTask& task, const RippleUser& requestor, string
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
+	int previously_assigned = task.assigned;
 	try { //Pass this back to the previous if possible
 		task.assigned = GetLastAssigned( task );
 	}
@@ -352,6 +378,16 @@ void Ripple::CompleteTask( RippleTask& task, const RippleUser& requestor, string
 
 	task.state = RTS_COMPLETED;
 	RippleLog log( requestor, task, RLF_COMPLETED, reason );
+	UpdateTask( task, log, previously_assigned );
+}
+
+void Ripple::CloseTask( RippleTask& task, const RippleUser& requestor, string reason ) {
+	string cannot = CheckAction( task, requestor, RLF_CLOSED );
+	if ( cannot != "" )
+		throw RippleException( cannot );
+
+	task.state = RTS_CLOSED;
+	RippleLog log( requestor, task, RLF_CLOSED, reason );
 	UpdateTask( task, log );
 }
 
@@ -360,7 +396,7 @@ void Ripple::AddNoteToTask( const RippleTask& task, const RippleUser& requestor,
 	if ( cannot != "" )
 		throw RippleException( cannot );
 
-	if ( description == "" )
+	if ( Blank( description ) )
 		throw RippleException( "Note must have some content." );
 	RippleLog log( requestor, task, RLF_NOTE, description );
 	UpdateTask( task, log );
@@ -373,6 +409,16 @@ void Ripple::GetPossibleActions( const RippleTask& task, const RippleUser& reque
 			flavor != KnownFlavors.end(); ++flavor ) {
 		actions[*flavor] = CheckAction( task, requestor, *flavor );
 	}
+}
+
+bool Ripple::Blank( const string& str ) {
+	if ( str == "" )
+		return true;
+
+	if ( str.find_first_of( "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=~!@#$%^&*()_+[];',./{}:\"<>?" ) == string::npos )
+		return true;
+
+	return false;
 }
 
 string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor, RIPPLE_LOG_FLAVOR flavor ) {
@@ -400,10 +446,11 @@ string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor,
 				return string( "You must be assigned to a task to request feedback." );
 			if ( task.state != RTS_OPEN )
 				return string( "You cannot request feedback  for a task unless it is open." ); 
-			{ vector<int> history;
-				GetLinearizedAssignmentHistory( task, history );
-				if ( history.size() < 2 )
-					return string( "There is noone to request feedback from." );
+			try {
+				GetLastAssigned( task );
+			}
+			catch ( exception& e ) {
+				return e.what();
 			}
 			break;
 		case RLF_DECLINED:
@@ -411,10 +458,11 @@ string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor,
 				return string( "You must be assigned to a task to decline it." );
 			if ( task.state != RTS_OPEN )
 				return string( "You cannot decline a task unless it is open." ); 
-			{ vector<int> history;
-				GetLinearizedAssignmentHistory( task, history );
-				if ( history.size() < 2 )
-					return string( "There is noone to decline to." );
+			try {
+				GetLastAssigned( task );
+			}
+			catch ( exception& e ) {
+				return e.what();
 			}
 			break;
 		case RLF_ACCEPTED:
@@ -438,15 +486,19 @@ string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor,
 				return string( "You must be assigned to a task to complete it." );
 			if ( task.IsStakeHolder( requestor ) )
 				return string( "The stakeholder just closes a task to complete it." );
+			else if ( task.IsAssigned( requestor ) && task.state < RTS_ACCEPTED )
+				return string( "You must accept the task first to complete it." );
 			if ( !(task.state == RTS_OPEN || task.state == RTS_ACCEPTED || 
 						task.state == RTS_STARTED || task.state == RTS_COMPLETED ) )
 				return string( "You cannot complete a task unless it is accepted or started, "
 						"or has not been completed back to the stakeholder." ); 
 			if ( task.state == RTS_COMPLETED ) {
-				vector<int> history;
-				GetLinearizedAssignmentHistory( task, history );
-				if ( history.size() < 2 )
-					return string( "There is noone to complete back to." );
+				try {
+					GetLastAssigned( task );
+				}
+				catch ( exception& e ) {
+					return e.what();
+				}
 			}
 			break;
 		case RLF_REOPENED:
@@ -516,6 +568,8 @@ void Ripple::InsertTask( RippleTask& task ) {
 
 void Ripple::InsertLog( RippleLog& log ) {
 
+	if ( log.description.length() > 4096 )
+		throw RippleException( "log entry must not exceed 4k characters" );
 	sql << "INSERT INTO logs VALUES("
 		<< ":log_id, :flavor, :description, :user_id, :task_id,"
 		<< ":created_date)",
@@ -524,7 +578,7 @@ void Ripple::InsertLog( RippleLog& log ) {
 	sql << "SELECT last_insert_rowid()", into( log.log_id );
 }
 
-void Ripple::UpdateTask( const RippleTask& task, RippleLog& log ) {
+void Ripple::UpdateTask( const RippleTask& task, RippleLog& log, int previously_assigned ) {
 
 	transaction tr(sql);
 	sql << "UPDATE tasks SET "
@@ -538,10 +592,16 @@ void Ripple::UpdateTask( const RippleTask& task, RippleLog& log ) {
 
 	stringstream task_data, user_id;
 	task_data << task;
-	user_id << task.assigned;
+	user_id << task.stakeholder;
 	rc->SubmitEvent( user_id.str(), task_data.str() );
 	if ( task.assigned != task.stakeholder ) {
-		user_id << task.stakeholder;
+		user_id.str( "" );
+		user_id << task.assigned;
+		rc->SubmitEvent( user_id.str(), task_data.str() );
+	}
+	else if ( previously_assigned != -1 && task.assigned != previously_assigned ){
+		user_id.str( "" );
+		user_id << previously_assigned;
 		rc->SubmitEvent( user_id.str(), task_data.str() );
 	}
 }

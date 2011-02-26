@@ -21,6 +21,7 @@ class Ripple {
 		void InsertUser( RippleUser& ru );
 
 		void GetUser( int user_id, RippleUser& user );
+		void GetUsers( vector<int>& user_ids );
 		void UpdateUser( const RippleUser& user );
 		RippleUser GetUserFromEmailAndPassword( const string& email, const string& password );
 
@@ -29,7 +30,7 @@ class Ripple {
 
 		RippleTask CreateTask( const RippleUser& ru, const string& subject_and_body, std::time_t start = -1, std::time_t due = -1 );
 		void GetTask( int task_id, RippleTask& task );
-		void GetUsersAssignedTasks( int user_id, vector<int>& tasks, bool includeAccepted = true );
+		void GetUsersTasks( int user_id, vector<int>& tasks, bool includeAccepted = true );
 		void GetLogsForTask( const RippleTask& task, vector<int>& logs );
 		void GetLog( int log_id, RippleLog& log );
 
@@ -41,6 +42,7 @@ class Ripple {
 		void DeclineTask( RippleTask& task, const RippleUser& requestor, const string& reason );
 		void StartTask( RippleTask& task, const RippleUser& requestor, string reason = "" );
 		void CompleteTask( RippleTask& task, const RippleUser& requestor, string reason = "" );
+		void CloseTask( RippleTask& task, const RippleUser& requestor, string reason = "" );
 		void AddNoteToTask( const RippleTask& task, const RippleUser& requestor, const string& body );
 
 		/** 
@@ -56,11 +58,13 @@ class Ripple {
 
 		//Needs to access db functions to work
 		friend std::ostream& operator<<(std::ostream& out, const RippleTask& task );
+		friend std::ostream& operator<<(std::ostream& out, const RippleLog& log );
 	private:
 		static Ripple* instance;
 		Ripple();
 		Ripple( const Ripple& ripple ) { throw logic_error( "not allowed" ); }
 		Ripple operator=( const Ripple& ripple ) { throw logic_error( "not allowed" ); }
+		static bool Blank( const string& str );
 
 		vector<RIPPLE_LOG_FLAVOR> KnownFlavors;
 
@@ -88,7 +92,7 @@ class Ripple {
 
 		void InsertTask( RippleTask& task );
 		void InsertLog( RippleLog& log );
-		void UpdateTask( const RippleTask& task, RippleLog& log );
+		void UpdateTask( const RippleTask& task, RippleLog& log, int previously_assigned = -1 );
 
 		soci::session sql;
 		rc::restcomet* rc;

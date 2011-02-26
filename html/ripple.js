@@ -59,7 +59,7 @@ ripple.query = function( method, args, callback ) {
 };
 
 ripple.load_all_assigned_tasks = function() {
-	ripple.query( 'get_assigned_tasks', {}, function( data ) {
+	ripple.query( 'get_my_tasks', {}, function( data ) {
 		$("#assigned_tasks")
 			.html( '<legend class="ui-corner-all ui-widget-header task_region">assigned to you</legend>' )
 			.show();
@@ -80,19 +80,32 @@ ripple.delete_task = function( task ) {
 }
 
 ripple.process_task = function( task ) {
-	if ( $( '#task_' + task.task_id ).length ) {
+	if ( task.assigned == ripple.user_id ) {
+		if ( $( '#assigned_tasks #task_' + task.task_id ).length ) 
+			ripple.update_task( task );
+		else {
+			ripple.delete_task( task );
+			ripple.generate_task_dom( task ).prependTo('#assigned_tasks').fadeIn('slow');
+		}
+	}
+	else if ( task.stakeholder == ripple.user_id ) {
+		if ( $( '#stakeholder_tasks #task_' + task.task_id ).length ) 
+			ripple.update_task( task );
+		else {
+			ripple.delete_task( task );
+			ripple.generate_task_dom( task ).prependTo('#stakeholder_tasks').fadeIn('slow');
+		}
+	}
+	else
+		ripple.delete_task( task );
+}
+
+ripple.update_task = function( task ) {
 		var old_task = $( '#task_' +  task.task_id );
 		old_task.removeAttr( 'id' );
 		var new_task = ripple.generate_task_dom( task );
 		old_task.replaceWith( new_task );
 		new_task.show();
-	}
-	else if ( task.assigned == ripple.user_id )   
-		ripple.generate_task_dom( task ).prependTo('#assigned_tasks').fadeIn('slow');
-	else if ( task.stakeholder == ripple.user_id )
-		ripple.generate_task_dom( task ).prependTo('#stakeholder_tasks').fadeIn('slow');
-	else
-		ripple.delete_task( task );
 }
 
 ripple.generate_task_dom = function( task ) {
@@ -137,14 +150,26 @@ ripple.generate_task_dom = function( task ) {
 			}
 		})
 		.appendTo( task_container );
-	if ( task.stakeholder_avatar )
-		$('<img src="' + task.stakeholder_avatar + '" class="avatar" />').prependTo( taskInfo );
-	else
-		$('<img src="anonymous.png" class="avatar" />').prependTo( taskInfo );
-	$('<div>')
-		.addClass( "stakeholder" )
-		.html( task.stakeholder_name )
-		.appendTo( taskInfo );
+	if ( ripple.user_id != task.assigned ) {
+		if ( task.assigned_avatar )
+			$('<img src="' + task.assigned_avatar + '" class="avatar" />').prependTo( taskInfo );
+		else
+			$('<img src="anonymous.png" class="avatar" />').prependTo( taskInfo );
+		$('<div>')
+			.addClass( "assigned" )
+			.html( "Assigned: " + task.assigned_name )
+			.appendTo( taskInfo );
+	}
+	else {
+		if ( task.stakeholder_avatar )
+			$('<img src="' + task.stakeholder_avatar + '" class="avatar" />').prependTo( taskInfo );
+		else
+			$('<img src="anonymous.png" class="avatar" />').prependTo( taskInfo );
+		$('<div>')
+			.addClass( "stakeholder" )
+			.html( "Stakeholder: " + task.stakeholder_name )
+			.appendTo( taskInfo );
+	}
 	if ( task.start_date != "" ) {
 		var start_date = new Date( task.start_date );
 		$('<div>')
@@ -170,29 +195,56 @@ ripple.generate_task_dom = function( task ) {
 	for( i = task.logs.length - 1; i >= 0; i-- ) {
 		var log = task.logs[i]
 		var log_entry = $('<div class="log_entry">')
+			.attr( 'title', "click to show details" )
 			.addClass('log_flavor_' + task.logs[i].flavor);
+
+
 
 		if ( task.logs[i].subject != "" ) {
 			$('<p>')
 				.addClass('log_subject')
 				.addClass('log_flavor_' + task.logs[i].flavor )
-				.html( ripple.get_action_img( task.logs[i].flavor ) + task.logs[i].subject )
+				.text( task.logs[i].subject )
+				.append( ripple.get_action_img( task.logs[i].flavor ) ) 
+				.prepend( '<img class="small_avatar" src="' + task.logs[i].user_avatar  + '" />' )
 				.appendTo( log_entry );
-		}
-
-		if ( task.logs[i].body != "" ) {
 			log_entry
 				.css( 'cursor', 'pointer' )
 				.click( function() {
 					$( this ).children().not('.log_subject').toggle();
-				})
-				.attr( 'title', "click to show full text" );
+				});
+		}
+		else {
+			$('<p>')
+				.addClass( 'log_details' )
+				.html( ripple.get_action_img( task.logs[i].flavor ) + 
+						'user: ' + task.logs[i].user_name + '<br />' + 
+						'['  + ripple.flavor_name( task.logs[i].flavor ) + '] ' +
+						ripple.pretty_datetime( new Date( task.logs[i].created_date ) ) )
+				.prepend( '<img class="small_avatar" src="' + task.logs[i].user_avatar  + '" />' )
+				.appendTo( log_entry );
+		}
+		
+
+
+		if ( task.logs[i].body != "" ) {
+			log_entry
+				.attr( 'title', "click to show full text and details" );
 			$('<p>')
 				.html( "..." )
 				.appendTo( log_entry );
 			$('<p>')
 				.addClass('log_body ui-helper-hidden log_flavor_' + task.logs[i].flavor )
-				.html( task.logs[i].body.replace( /\n/g, '<br />\n' ) )
+				.text( task.logs[i].body )
+				.appendTo( log_entry );
+		}
+
+		if ( task.logs[i].subject != "" ) {
+			$('<p>')
+				.addClass('log_details ui-helper-hidden top_line log_flavor_' + task.logs[i].flavor )
+				.html( 'user: ' + task.logs[i].user_name + '<br />' + 
+						'['  + ripple.flavor_name( task.logs[i].flavor ) + '] ' +
+						ripple.pretty_datetime( new Date( task.logs[i].created_date ) ) )
 				.appendTo( log_entry );
 		}
 
@@ -207,6 +259,35 @@ ripple.generate_task_dom = function( task ) {
 
 	return task_container;
 };
+
+ripple.flavor_name = function( flavor_id ) {
+	switch ( flavor_id ) {
+		case ripple.task_flavors.RLF_CREATED:
+			return 'created';
+		case ripple.task_flavors.RLF_NOTE:
+			return 'note';
+		case ripple.task_flavors.RLF_FORWARDED:
+			return 'forward';
+		case ripple.task_flavors.RLF_FEEDBACK:
+			return 'feedback';
+		case ripple.task_flavors.RLF_DECLINED:
+			return 'task';
+		case ripple.task_flavors.RLF_ACCEPTED:
+			return 'accept';
+		case ripple.task_flavors.RLF_STARTED:
+			return 'start';
+		case ripple.task_flavors.RLF_COMPLETED:
+			return 'complete';
+		case ripple.task_flavors.RLF_REOPENED:
+			return 'reopen';
+		case ripple.task_flavors.RLF_CLOSED:
+			return 'close';
+		case ripple.task_flavors.RLF_CANCELED:
+			return 'cancel';
+		default:
+			return '';
+	}
+}
 
 ripple.pretty_datetime = function( datum ) {
 	var today = new Date();
@@ -249,7 +330,7 @@ ripple.get_action_img = function( action_id ) {
 		case ripple.task_flavors.RLF_FEEDBACK:
 			return '<img class="action_img" src="feedback.png" />';
 		case ripple.task_flavors.RLF_DECLINED:
-			return '<img class="action_img" src="task.png" />';
+			return '<img class="action_img" src="decline.png" />';
 		case ripple.task_flavors.RLF_ACCEPTED:
 			return '<img class="action_img" src="accept.png" />';
 		case ripple.task_flavors.RLF_STARTED:
@@ -278,12 +359,10 @@ ripple.add_action = function( task_id, action_id, accordion ) {
 		case ripple.task_flavors.RLF_FORWARDED:
 			var title_text = ripple.get_action_img( action_id ) + 'forward this task';
 			var button_text = "forward";
-			$('<input type="text" class="forward_to" placeholder="forward to...">')
-				.autocomplete({
-					minLength: 1,
-					source: [ "Glenn", "Matt" ]
-				})
+			tac.append( "Forward to:<br />" );
+			$('<select class="user_list">')
 				.appendTo( tac );
+			ripple.load_user_lists();
 			break;
 		case ripple.task_flavors.RLF_FEEDBACK:
 			var title_text = ripple.get_action_img( action_id ) + 'request feedback';
@@ -335,7 +414,7 @@ ripple.add_action = function( task_id, action_id, accordion ) {
 					action: $( this ).attr( 'action' ), 
 					description: $( this ).siblings('textarea').val(),
 					task_id: $( this ).attr( 'task_id' ),
-					forwardee: $( this ).siblings().find('input').val()
+					forwardee_id: $( this ).siblings('.user_list').val()
 				}, function( data ) {
 					//TODO: Clean this up
 					if (data.error_msg != '' )
@@ -399,4 +478,20 @@ ripple.parse_events = function( data ) {
 		var task = eval('(' + data.substr( event_rx.lastIndex, m[2]  ) + ')');
 		ripple.process_task( task );
 	}
+}
+
+ripple.load_user_lists = function() {
+	ripple.query( "get_users", {}, function( data ) {
+		var users_data = [];
+		$.each( data.users, function( index, user ) {
+			users_data.push('<option value="'+ user.user_id +'">'+ user.name + '</option>');
+		});
+
+		$('select.user_list:empty')
+			.html( users_data.join('') )
+			.selectmenu({
+				style:'popup',
+				width: '8em'
+			});
+	});
 }

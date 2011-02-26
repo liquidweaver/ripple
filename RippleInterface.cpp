@@ -411,14 +411,14 @@ void RippleInterface::query( struct mg_connection *conn,
 					case RLF_FORWARDED:
 						{ 
 							RippleUser forwardee;
-							int forwardee_id = atoi( get_post_var( post_data, "fowardee_id" ).c_str() );
+							int forwardee_id = atoi( get_post_var( post_data, "forwardee_id" ).c_str() );
+							cout << "forwardee_id: " << forwardee_id << endl;
 							ripple->GetUser( forwardee_id, forwardee );
 							ripple->ForwardTask( task, user, forwardee, description );
 						}
 						break;
 					case RLF_FEEDBACK:
-						//TODO: Stub
-						throw logic_error( "Not implemented!" );
+						ripple->RequestFeedback( task, user, description );
 						break;
 					case RLF_DECLINED:
 						ripple->DeclineTask( task, user, description );
@@ -436,8 +436,7 @@ void RippleInterface::query( struct mg_connection *conn,
 						ripple->ReOpenTask( task, user, description );
 						break;
 					case RLF_CLOSED:
-						//TODO: stub
-						throw logic_error( "Not implemented!" );
+						ripple->CloseTask( task, user, description );
 						break;
 					case RLF_CANCELED:
 						ripple->CancelTask( task, user, description );
@@ -478,6 +477,25 @@ void RippleInterface::query( struct mg_connection *conn,
 			
 			mg_printf( conn, "%s%s", ajax_reply_start, user_serialized.str().c_str() );
 		}
+		if ( method == "get_users" ) {
+			vector<int> user_ids;
+
+			ripple->GetUsers( user_ids );
+
+			stringstream json;
+			json << "{ \"users\": [";
+			for ( vector<int>::const_iterator user_id = user_ids.begin();
+					user_id != user_ids.end(); ++user_id ) {
+				RippleUser user;
+				ripple->GetUser( *user_id, user );
+				json << user;
+				if ( user_id + 1 != user_ids.end() ) 
+					json << ',';
+			}
+			json << "]}";
+
+			mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+		}
 	 	if ( method == "create_task" ) {
 			string description = get_post_var( post_data, "description" );
 			string start_date = get_post_var( post_data, "start_date" );
@@ -496,9 +514,9 @@ void RippleInterface::query( struct mg_connection *conn,
 				mg_printf( conn, "%s{ \"error_msg\":\"%s\" }", ajax_reply_start, e.what() );
 			}
 		}
-      if ( method == "get_assigned_tasks" ) {
+      if ( method == "get_my_tasks" ) {
         vector<int> task_ids;
-        ripple->GetUsersAssignedTasks( user.user_id, task_ids, false );
+        ripple->GetUsersTasks( user.user_id, task_ids, false );
 
         if ( task_ids.size() > 0 ) {
           stringstream json;

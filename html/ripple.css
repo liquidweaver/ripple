@@ -95,27 +95,43 @@ div.task_container {
 }
 
 p.log_subject.log_flavor_0 {
-	font-size: 1.2em;
-	font-weight: bold;
+	font-size: 1.2em !important;
 	text-shadow: 1px 1px 1px #666666;
 	display: block;
 }
 
-div.log_flavor_1 {
+div.log_entry {
 	border: 1px solid darkgrey;
 	background: lightgrey;
 	padding: .5em;
 	-moz-border-radius: 4px;
 	-webkit-border-radius: 4px;
 	border-radius: 4px;
-	margin-top: .5em
+	margin-top: .5em;
+	min-height: 26px;
+	position: relative;
 }
-p.log_subject.log_flavor_1 {
+
+div.log_entry.log_flavor_0 {
+	border-top: 0 !important;
+	border-left: 0 !important;
+	border-right: 0 !important;
+	border-bottom: ridge !important;
+	background: none !important;
+	-moz-border-radius: 0 !important;
+	-webkit-border-radius: 0 !important;
+	border-radius: 0 !important;
+	margin-top: inherit !important;
+}
+
+p.log_subject {
 	font-weight: bold;
+	font-size: .9em;
 }
 
 div.log_body {
 	border-top: ridge;
+	font-size: .8em;
 }
 
 div.task_info {
@@ -137,8 +153,18 @@ img.avatar {
 	margin-bottom: .5em;
 }
 
+img.small_avatar {
+	float: left;
+	margin-right: .25em;
+	margin-bottom: .25em;
+	height: 25px;
+	width: 25px;
+}
+
 img.action_img {
-	margin-right: .5em;
+	position: absolute;
+	right: .25em;
+	top: .25em;
 }
 
 div.taskinfo_name {
@@ -186,4 +212,19 @@ div.task_action_content textarea {
 div.task_action_content input {
 	font-size: .8em;
 	width: 95%
+}
+
+div.task_action_content span, li {
+	font-size: .8em;
+}
+
+.top_line {
+	border-top: 1px solid grey;
+}
+
+p.log_details {
+	clear: both;
+	color: grey;
+	font-style: italic;
+	font-size: .8em;
 }
