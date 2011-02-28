@@ -7,7 +7,7 @@ clean:
 	rm *.o rippled tests/ripple_tests tests/ripple.db
 
 rippled: rippled.cpp Ripple.o RippleInterface.o ripple.db mongoose.o restcomet.o
-	g++ -g -o rippled rippled.cpp Ripple.o RippleInterface.o mongoose.o restcomet.o -lsoci_sqlite3 -lsoci_core -lpthread -lboost_regex -lboost_thread
+	g++ -g -o rippled rippled.cpp Ripple.o RippleInterface.o mongoose.o restcomet.o -lsoci_sqlite3 -lsoci_core -lpthread -lboost_regex -lboost_thread -I/usr/include/soci
 
 tests/ripple_tests: tests/ripple_tests.cpp Ripple.o tests/ripple.db restcomet.o
 	g++ -g -o tests/ripple_tests tests/ripple_tests.cpp Ripple.o restcomet.o -lsoci_sqlite3 -lsoci_core -lboost_unit_test_framework -lboost_regex -lboost_thread

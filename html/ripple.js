@@ -216,12 +216,14 @@ ripple.generate_task_dom = function( task ) {
 
 
 		if ( task.logs[i].subject != "" ) {
+			var avatar_img =  ( task.logs[i].user_avatar ) ? '<img src="' + task.logs[i].user_avatar  + '" class="small_avatar" />' : '<img src="anonymous.png" class="small_avatar" />';
+
 			$('<p>')
 				.addClass('log_subject')
 				.addClass('log_flavor_' + task.logs[i].flavor )
 				.text( task.logs[i].subject )
 				.append( ripple.get_action_img( task.logs[i].flavor ) ) 
-				.prepend( '<img class="small_avatar" src="' + task.logs[i].user_avatar  + '" />' )
+				.prepend( avatar_img )
 				.appendTo( log_entry );
 			log_entry
 				.css( 'cursor', 'pointer' )
@@ -313,7 +315,7 @@ ripple.pretty_datetime = function( datum ) {
 	if ( datum.toDateString() == today.toDateString() )
 		date_string = "today";
 	else {
-		date_string = datum.getMonth() + '/' + datum.getDate();	
+		date_string = Number( datum.getMonth() + 1 ) + '/' + datum.getDate();	
 		if ( datum.getFullYear() != today.getFullYear() )
 			date_string  += '/' + datum.getFullYear()
 	}

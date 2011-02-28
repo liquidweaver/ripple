@@ -18,7 +18,6 @@
 #include "RippleInterface.hpp"
 
 #define EVENTS_PORT 8081
-#define INTERFACE_PORT "8080"
 
 using namespace std;
 
