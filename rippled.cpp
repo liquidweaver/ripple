@@ -14,20 +14,29 @@
 #include <exception>
 #include <string>
 #include <memory>
+#include <signal.h>
 #include "Ripple.hpp"
 #include "RippleInterface.hpp"
 
 #define EVENTS_PORT 8081
 
 using namespace std;
+bool terminated = false;
+
+void sigproc( int ) {      
+    terminated = true;
+}
 
 int main( int argc, char* argv[] ) {
   Ripple* ripple = Ripple::Instance();
   RippleInterface* ri = RippleInterface::Instance( ripple );
+  signal( SIGINT, sigproc );
 
-  cout << "Press any key to stop..." << endl;
-  cin.get();
+  cout << "Ctrl-c to quit..." << endl;
+  while ( !terminated ) { sleep( 5000 ); }
 
+  RippleInterface::Release();
+  Ripple::Release();
   return 0;
 }
 // vim: ts=2 sw=2 ai et

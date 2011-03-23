@@ -272,6 +272,10 @@ ripple.generate_task_dom = function( task ) {
 
 	};
 
+	$('<div class="task_status ui-state-error ui-corner-bl ui-corner-br">')
+		.text( ripple.state_name( task.state) )
+		.prependTo( task_element );
+
 	taskInfo.children().hide();
 
 	return task_container;
@@ -303,6 +307,25 @@ ripple.flavor_name = function( flavor_id ) {
 			return 'cancel';
 		default:
 			return '';
+	}
+}
+
+ripple.state_name = function( state ) {
+	switch ( state ) {
+		case ripple.task_states.RTS_OPEN:
+			return "OPEN";
+		case ripple.task_states.RTS_ACCEPTED:
+			return "ACCEPTED";
+		case ripple.task_states.RTS_STARTED:
+			return "STARTED";
+		case ripple.task_states.RTS_COMPLETED:
+			return "COMPLETED";
+		case ripple.task_states.RTS_CLOSED:
+			return "CLOSED";
+		case ripple.task_states.RTS_CANCELED:
+			return "CANCELED";
+		default:
+				return "unknown";
 	}
 }
 
@@ -515,4 +538,10 @@ ripple.load_user_lists = function() {
 
 ripple.get_attention = function() {
 	$('.need_attention').effect( 'highlight', {}, 3000 );
+}
+
+ripple.calculate_subject = function( description ) {
+	var subject_rx =/^((.{1,30})( +|$\n?)|(.{1,30}))/g;
+	var match = description.match( subject_rx );
+	return match;
 }

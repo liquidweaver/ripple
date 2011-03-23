@@ -78,7 +78,7 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
 div.task {
 	width: 18em;
 	height: 12em;
-	padding: 1em 1em 1em  2em;
+	padding: 2em 1em 1em  2em;
 	overflow: auto;
 }
 
@@ -227,4 +227,25 @@ p.log_details {
 	color: grey;
 	font-style: italic;
 	font-size: .8em;
+}
+
+#create_task_form input {
+	font-size: .7em;
+	width: 100%;
+}
+
+#create_task_form textarea {
+	font-size: .7em;
+}
+
+div.task_status {
+	margin-top: -2.7em;
+	letter-spacing: 1em;
+	font-size: .8em;
+	text-align: center;
+	border: 1px solid darkgrey;
+	border-bottom-left-radius: 4px;
+	background-color: lightgrey;
+	text-shadow: 1px 1px 1px white;
+	padding: .25em;
 }

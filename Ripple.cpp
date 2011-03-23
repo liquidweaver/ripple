@@ -443,7 +443,7 @@ string Ripple::CheckAction( const RippleTask& task, const RippleUser& requestor,
 			return string( "Task already exists." );
 			break;
 		case RLF_NOTE:
-			if ( !task.IsStakeHolder( requestor ) && ( task.state != RTS_ACCEPTED || task.state != RTS_STARTED ) )
+			if ( task.IsAssigned( requestor ) && ( task.state < RTS_ACCEPTED && task.state > RTS_STARTED ) )
 				return string( "As assigned only, you can only enter notes if you have accepted or started the task." );
 			break;
 		case RLF_FORWARDED:

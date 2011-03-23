@@ -66,6 +66,9 @@
 					ripple.change_view( ui.panel.id  );
 				}
 			});
+			$("#create_task_description").keyup( function() {
+				$("#subject").val( ripple.calculate_subject( $( this ).val() ) );
+			});
 			$("#create_task_start_date").datetimepicker({ ampm: true });
 			$("#create_task_due_date").datetimepicker({ ampm: true } );
 			$("#create_task_btn").button();
@@ -153,6 +156,8 @@
 <div class="ui-helper-hidden" id="create_task_dialog" title="Create a Task">
 <form id="create_task_form">
 	<fieldset>
+		<p> <label for="subject">subject</label><br />
+		<input type="text" id="subject" title="Subject" disabled="disabled" /> </p>
 		<p> <label for="create_task_description">description</label><br />
 		<textarea rows="4" cols="20" id="create_task_description" title="Enter task description. The first line is the subject." required="required" /></textarea> </p>
 		<p> <label for="create_task_start_date">start date</label><br />
