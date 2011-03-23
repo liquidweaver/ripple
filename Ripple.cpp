@@ -117,7 +117,7 @@ void Ripple::Release() {
 Ripple::Ripple() : pool( DB_POOL_SIZE ) {
 	for ( size_t i = 0; i != DB_POOL_SIZE; ++i ) {
 		session& sql = pool.at(i);
-		sql.open( backEnd, "ripple.db"  );
+		sql.open( backEnd, "dbname=ripple.db timeout=5"  );
 		sql << "PRAGMA foreign_keys = ON";
 	}
 
@@ -260,8 +260,11 @@ void Ripple::GetUsersTasks( int user_id, vector<int>& tasks ) {
 
 
 	soci::session sql( pool );
-	sql << "SELECT task_id FROM tasks WHERE ( assigned=:a_user_id OR stakeholder=:s_user_id ) AND state < :end",
-		 into( tasks ), use( user_id ), use( user_id ), use( static_cast<int>( RTS_CLOSED ) );
+	sql << "SELECT task_id FROM tasks "
+		<< "WHERE ( assigned=:a_user_id OR stakeholder=:s_user_id ) "
+		<< "AND state < :end",
+		 into( tasks ), use( user_id ),
+		 use( user_id ), use( static_cast<int>( RTS_CLOSED ) );
 }
 
 void Ripple::GetLogsForTask( const RippleTask& task, vector<int>& logs ) {
@@ -285,6 +288,20 @@ void Ripple::GetLog( int log_id, RippleLog& log ) {
 	if ( !sql.got_data() )
 		throw RippleException( "Log not found." );
 
+}
+
+void Ripple::GetRecentLogsForUser( const RippleUser& ru, vector<int>& logs ) {
+	logs.clear();
+	logs.resize( 500 );
+	
+	soci::session sql( pool );
+	sql << "SELECT log_id FROM logs INNER JOIN tasks "
+			<< "ON tasks.task_id = logs.task_id "
+			<< "WHERE tasks.stakeholder = :user_id "
+			<<	"ORDER BY logs.created_date LIMIT 100",
+			into( logs ), use( ru.user_id );
+
+	
 }
 
 void Ripple::ReOpenTask( RippleTask& task, const RippleUser& requestor, const string& reason ) {

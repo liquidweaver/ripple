@@ -4,6 +4,7 @@ var ripple = {
 	user_id: $.cookie( 'user_id' ),
 	email: $.cookie( 'email' ),
 	name: $.cookie( 'name' ),
+	show_event_stream: false,
 	event_sequence: -1
 };
 
@@ -540,8 +541,78 @@ ripple.get_attention = function() {
 	$('.need_attention').effect( 'highlight', {}, 3000 );
 }
 
+
 ripple.calculate_subject = function( description ) {
 	var subject_rx =/^((.{1,30})( +|$\n?)|(.{1,30}))/g;
 	var match = description.match( subject_rx );
 	return match;
+}
+
+ripple.render_stream = function( ) {
+	if ( !ripple.show_event_stream ) {
+		$('#stream')
+			.html( '<span class="ui-icon ui-icon-triangle-1-s"></span>' );
+	}
+	else {
+		ripple.query( "get_stream", {}, function( data ) {
+		$('#stream')
+			.html( '<span class="ui-icon ui-icon-triangle-1-n"></span><hr />' );
+
+			for( i=0; i < data.logs.length; i++ ) {
+				var log = data.logs[i]
+				var log_entry = $('<div class="log_entry">')
+										.attr( 'title', "click to show details" );
+
+
+				if ( log.subject != "" ) {
+					$('<p>')
+						.addClass('log_subject')
+						.text( log.subject )
+						.append( ripple.get_action_img( log.flavor ) ) 
+						.prepend( '<img class="small_avatar" src="' + log.user_avatar  + '" />' )
+						.appendTo( log_entry );
+					log_entry
+						.css( 'cursor', 'pointer' )
+						.click( function() {
+								$( this ).children().not('.log_subject').toggle();
+							});
+				}
+				else {
+					$('<p>')
+						.addClass( 'log_details' )
+						.html( ripple.get_action_img( log.flavor ) + 
+								'user: ' + log.user_name + '<br />' + 
+								'['  + ripple.flavor_name( log.flavor ) + '] ' +
+								ripple.pretty_datetime( new Date( log.created_date ) ) )
+						.prepend( '<img class="small_avatar" src="' + log.user_avatar  + '" />' )
+						.appendTo( log_entry );
+				}
+
+
+
+				if ( log.body != "" ) {
+					log_entry
+						.attr( 'title', "click to show full text and details" );
+					$('<p>')
+						.html( "..." )
+						.appendTo( log_entry );
+					$('<p>')
+						.addClass('log_body ui-helper-hidden log_flavor_' + log.flavor )
+						.text( log.body )
+						.appendTo( log_entry );
+				}
+
+				if ( log.subject != "" ) {
+					$('<p>')
+						.addClass('log_details ui-helper-hidden top_line log_flavor_' + log.flavor )
+						.html( 'user: ' + log.user_name + '<br />' + 
+								'['  + ripple.flavor_name( log.flavor ) + '] ' +
+								ripple.pretty_datetime( new Date( log.created_date ) ) )
+						.appendTo( log_entry );
+				}
+				$('#stream').append( log_entry );
+			};
+		});
+	}
+	ripple.show_event_stream = !ripple.show_event_stream;
 }

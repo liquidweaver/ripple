@@ -529,7 +529,23 @@ void RippleInterface::query( struct mg_connection *conn,
 
 			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
 		 }
+		 if ( method == "get_stream" ) {
+			vector<int> log_ids;
+			ripple->GetRecentLogsForUser( user, log_ids );
 
+			stringstream json;
+			json << "{ \"logs\": [";
+			for  ( vector<int>::const_iterator log_id = log_ids.begin(); log_id != log_ids.end(); ++log_id ) {
+				RippleLog log;
+				ripple->GetLog( *log_id, log );
+				json << log;
+				if ( log_id + 1 != log_ids.end() )
+					json << ',';
+			 }
+			 json << "]}";
+
+			 mg_printf( conn, "%s%s", ajax_reply_start, json.str().c_str() );
+		 }
 		 if ( method == "get_task" ) {
 			 int task_id = atoi( get_post_var( post_data, "task_id" ).c_str() );
 			 RippleTask task;

@@ -1,1 +1,10 @@
 This is the Ripple distributed task management daemon.
+compile SOCI by going into the src folder and using this line:
+cmake -G "Unix Makefiles" -DWITH_BOOST=ON \
+									-DWITH_ORACLE=OFF \
+									-DWITH_MYSQL=ON \
+									-DWITH_ODBC=OFF \
+									-DWITH_POSTGRESQL=OFF \
+									WITH_SQLITE3=ON \
+									-DSOCI_TESTS=OFF \
+									-DSOCI_EMPTY_TEST_CONNSTR=OFF ./	

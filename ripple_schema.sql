@@ -14,6 +14,7 @@ CREATE TABLE tasks (
 	due_date INTEGER,
 	state INTEGER,
 	parent_task INTEGER REFERENCES tasks
+	dependant_on INTEGER REFERENCES tasks
 );
 
 CREATE TABLE logs (

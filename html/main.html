@@ -106,8 +106,12 @@
 			  return false;
 
 			});
+			$('#stream_button').button().click( function() {
+				ripple.render_stream( );
+			});
 			setTimeout( ripple.event_manager, 500 );
 			setInterval( ripple.get_attention, 10000)
+			ripple.render_stream( );
 		});
 	</script>
 </head>
@@ -123,6 +127,8 @@
 			<a class="logout" href="/logout">logout</a>
 		</div>
 		<div id="tasks" class="tasks"> 
+			<input type="button" id="stream_button" value="stream" />
+			<div id="stream" class="ui-widget-content ui-widget ui-corner-bottom"> </div>
 		</div>
 		<div id="profile"> 
 			<form method="post" enctype="multipart/form-data">

@@ -34,6 +34,7 @@ class Ripple {
 		void GetUsersTasks( int user_id, vector<int>& tasks );
 		void GetLogsForTask( const RippleTask& task, vector<int>& logs );
 		void GetLog( int log_id, RippleLog& log );
+		void GetRecentLogsForUser( const RippleUser& ru, vector<int>& logs );
 
 		void ReOpenTask( RippleTask& task, const RippleUser& requestor, const string& reason );
 		void CancelTask( RippleTask& task, const RippleUser& requestor, const string& reason );

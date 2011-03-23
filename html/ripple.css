@@ -229,6 +229,7 @@ p.log_details {
 	font-size: .8em;
 }
 
+
 #create_task_form input {
 	font-size: .7em;
 	width: 100%;
@@ -248,4 +249,31 @@ div.task_status {
 	background-color: lightgrey;
 	text-shadow: 1px 1px 1px white;
 	padding: .25em;
+}
+
+#stream_button {
+	position: absolute;
+	bottom: .25em;
+	right: 1em;
+	height: 1.5em;
+	width: 20em;
+	padding: 0;
+}
+
+#stream {
+	position: absolute;
+	width: 18em;
+	right: 1em;
+	top: 100%;
+	z-index: 11;
+	padding: 0 1em 0 1em;
+	max-height: 30em;
+	overflow: auto;
+}
+
+#stream span {
+	margin-left:auto;
+	margin-right:auto;
+	margin-bottom: 0;
+	margin-top:auto;
 }
